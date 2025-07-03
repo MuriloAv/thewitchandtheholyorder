@@ -53,3 +53,14 @@ GAME_STATE_MENU = 0
 GAME_STATE_PLAYING = 1
 GAME_STATE_QUIT = 2
 GAME_STATE_GAME_OVER_WIN = 3
+
+# --- Constantes da Tela de Fim de Jogo ---
+GAME_OVER_WIN_IMAGE = 'asset/scorebg.png' # Caminho para a imagem de fundo de vitória
+WIN_TEXT_PT = "Você venceu os tiranos"
+WIN_TEXT_EN = "You defeated the tyrants"
+
+# --- Estados do Jogo (Usados em game.py) ---
+GAME_STATE_MENU = 0
+GAME_STATE_PLAYING = 1
+GAME_STATE_QUIT = 2
+GAME_STATE_GAME_OVER_WIN = 3 # Garanta que este estado esteja definido e com o valor 3

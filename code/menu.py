@@ -26,14 +26,16 @@ class Menu:
                 "start_game": "Start Game",
                 "language_en": "English (EN)",
                 "language_pt": "Portuguese (BR)",
-                "quit_game": "Quit"
+                "quit_game": "Quit",
+                "win_message": const.WIN_TEXT_EN  # Adicionar tradução para a mensagem de vitória em inglês
             },
             "pt": {
                 "title": "A Bruxa e a Santa Ordem",
                 "start_game": "Iniciar Jogo",
                 "language_en": "Inglês (EN)",
                 "language_pt": "Português (BR)",
-                "quit_game": "Sair"
+                "quit_game": "Sair",
+                "win_message": const.WIN_TEXT_PT  # Adicionar tradução para a mensagem de vitória em português
             }
         }
         self.current_language = "pt"
