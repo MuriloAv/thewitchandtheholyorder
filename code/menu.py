@@ -1,7 +1,7 @@
 # code/menu.py
 import pygame
 import os
-from . import const  # NOVO: Importa o módulo de constantes
+from . import const  # Importa o módulo de constantes
 
 
 class Menu:
@@ -9,13 +9,8 @@ class Menu:
         self.screen = screen
         self.width, self.height = self.screen.get_size()
 
-        # Cores: Agora importadas de const.py, removendo definições locais
-        # self.PURPLE = (128, 0, 128)
-        # self.HIGHLIGHT_COLOR = (255, 255, 0)
-        # self.BLACK = (0, 0, 0)
-
         # Configuração da fonte - Usando const.MENU_FONT_SIZE
-        if font_size is None:  # Garante que se font_size não for passado, ele use a constante
+        if font_size is None:
             font_size = const.MENU_FONT_SIZE
 
         if font_path and os.path.exists(font_path):
@@ -27,7 +22,7 @@ class Menu:
         # --- Sistema de Tradução ---
         self.translations = {
             "en": {
-                "title": const.GAME_TITLE,  # Usando a constante GAME_TITLE
+                "title": const.GAME_TITLE,
                 "start_game": "Start Game",
                 "language_en": "English (EN)",
                 "language_pt": "Portuguese (BR)",
@@ -54,7 +49,7 @@ class Menu:
         # Variáveis de Interatividade (Foco/Hover)
         self.selected_index = 0
         self.hovered_index = -1
-        self.option_rects = []
+        self.option_rects = []  # Será preenchido em draw()
 
         # Carregando Imagem de Fundo e Música
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -76,10 +71,8 @@ class Menu:
             selected_key = self.selectable_options[index]
 
             if selected_key == "start_game":
-                pygame.mixer.music.fadeout(1000)
                 return "start_game"
             elif selected_key == "quit_game":
-                pygame.mixer.music.fadeout(1000)
                 return "quit"
             elif selected_key == "language_en":
                 self.current_language = "en"
@@ -91,29 +84,35 @@ class Menu:
         if self.menu_bg_image:
             self.screen.blit(self.menu_bg_image, (0, 0))
         else:
-            self.screen.fill(const.BLACK_COLOR)  # Usando const.BLACK_COLOR
+            self.screen.fill(const.BLACK_COLOR)
 
         # Renderiza e posiciona o título do jogo
         title_surface = self.font.render(self._get_translated_text("title"), True,
-                                         const.PURPLE_COLOR)  # Usando const.PURPLE_COLOR
-        title_rect = title_surface.get_rect(center=(self.width / 2, self.height * 0.4))
+                                         const.PURPLE_COLOR)
+        # Usando a nova constante para a posição Y do título
+        title_rect = title_surface.get_rect(
+            center=(self.width / 2, const.SCREEN_HEIGHT * const.MENU_TITLE_Y_FACTOR))  # <--- LINHA ALTERADA
         self.screen.blit(title_surface, title_rect)
 
         self.option_rects.clear()
 
-        y_start_pos = self.height * 0.65
-        option_spacing = 60
+        line_height = self.font.get_height() + 10  # Altura da linha incluindo um padding vertical
+        total_options_height = len(self.selectable_options) * line_height
+
+        y_start_options = title_rect.bottom + 30  # 30 pixels de espaçamento após o título
 
         for i, option_key in enumerate(self.selectable_options):
             text = self._get_translated_text(option_key)
 
             if i == self.selected_index or i == self.hovered_index:
-                text_color = const.HIGHLIGHT_COLOR  # Usando const.HIGHLIGHT_COLOR
+                text_color = const.HIGHLIGHT_COLOR
             else:
-                text_color = const.PURPLE_COLOR  # Usando const.PURPLE_COLOR
+                text_color = const.PURPLE_COLOR
 
             option_surface = self.font.render(text, True, text_color)
-            option_rect = option_surface.get_rect(center=(self.width / 2, y_start_pos + i * option_spacing))
+
+            # Posiciona cada opção a partir de y_start_options
+            option_rect = option_surface.get_rect(center=(self.width / 2, y_start_options + i * line_height))
 
             self.screen.blit(option_surface, option_rect)
             self.option_rects.append(option_rect)
@@ -121,17 +120,10 @@ class Menu:
         pygame.display.flip()
 
     def run(self):
-        try:
-            pygame.mixer.music.load(self.menusong_path)
-            pygame.mixer.music.play(-1)
-        except pygame.error as e:
-            print(f"Erro ao carregar ou reproduzir a música do menu: {e}")
-
         menu_running = True
         while menu_running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.mixer.music.fadeout(1000)
                     return "quit"
 
                 if event.type == pygame.MOUSEMOTION:
@@ -159,10 +151,9 @@ class Menu:
                         if action:
                             return action
                     elif event.key == pygame.K_ESCAPE:
-                        pygame.mixer.music.fadeout(1000)
                         return "quit"
 
             self.draw()
+            pygame.time.Clock().tick(const.FPS)
 
-        pygame.mixer.music.stop()
         return "quit"

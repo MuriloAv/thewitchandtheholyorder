@@ -1,40 +1,55 @@
 # code/const.py
 
-import pygame # Manter por enquanto, embora não seja estritamente necessário neste arquivo
-
-# --- Constantes do Jogo ---
+# --- Constantes da Tela ---
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
 GAME_TITLE = "The Witch and The Holy Order"
-FPS = 60
+FPS = 60 # Frames por segundo
 
-# --- Cores ---
+# --- Cores (RGB) ---
 WHITE_COLOR = (255, 255, 255)
 BLACK_COLOR = (0, 0, 0)
 RED_COLOR = (255, 0, 0)
 BLUE_SKY_COLOR = (135, 206, 235)
-GREEN_COLOR = (0, 255, 0)
 YELLOW_COLOR = (255, 255, 0)
 PURPLE_COLOR = (128, 0, 128)
-HIGHLIGHT_COLOR = YELLOW_COLOR
-
-# --- Constantes de Nível ---
-LEVEL_WIDTH = 4000
-LEVEL_HEIGHT = 600
-
-# --- Constantes de Assets de Fundo de Nível (Parallax) ---
-# LEVEL_BACKGROUND_FOLDER = 'lvl1bg' # Esta deve estar removida ou comentada
-LEVEL_BACKGROUND_DEFAULT_LAYER = 'lvl1bg1.png'
+HIGHLIGHT_COLOR = (255, 165, 0)
 
 # --- Constantes do Jogador ---
 PLAYER_SPEED = 5
-PLAYER_WIDTH = 70
-PLAYER_HEIGHT = 75
-# PLAYER_ASSET_FOLDER = 'playerwalk' # Esta deve estar removida ou comentada
+PLAYER_WIDTH = 80
+PLAYER_HEIGHT = 80
 PLAYER_SPRITE_FILENAME = 'playerwalk0.png'
+PLAYER_START_X = 100
+PLAYER_START_Y = 340
+
+# --- Constantes do Nível ---
+LEVEL1_WIDTH = 3000
+LEVEL2_WIDTH = 4000
+LEVEL3_WIDTH = 5000
+MAX_GAME_LEVELS = 3
+
+LVL1_BG_PREFIX = 'lvl1bg'
+LVL1_BG_COUNT = 6
+LVL1_BG_START_INDEX = 1
+
+LVL2_BG_PREFIX = 'lvl2bg'
+LVL2_BG_COUNT = 7
+LVL2_BG_START_INDEX = 0
+
+LVL3_BG_PREFIX = 'lvl3bg'
+LVL3_BG_COUNT = 5
+LVL3_BG_START_INDEX = 1
 
 # --- Constantes do Menu ---
-MENU_FONT_SIZE = 30 # Reduzido de 64 para 48, por exemplo
+MENU_FONT_SIZE = 40
 MENU_ITEM_COLOR = WHITE_COLOR
 MENU_SELECTED_ITEM_COLOR = YELLOW_COLOR
+FONT_NAME = 'OldLondon'
+MENU_TITLE_Y_FACTOR = 0.50
 
-# --- Outras Constantes ---
-FONT_NAME = "OldLondon" # Nome da fonte (sem a extensão)
+# --- Estados do Jogo (Usados em game.py) ---
+GAME_STATE_MENU = 0
+GAME_STATE_PLAYING = 1
+GAME_STATE_QUIT = 2
+GAME_STATE_GAME_OVER_WIN = 3
