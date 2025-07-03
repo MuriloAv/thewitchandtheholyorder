@@ -3,14 +3,14 @@
 import pygame
 from .menu import Menu
 import os
-from .level import Level
+from .level import Level # O Level possui a instância do Player
 from . import const
 
 
 class Game:
     def __init__(self):
         pygame.init()
-        pygame.mixer.init()  # Inicializa o mixer de áudio
+        pygame.mixer.init()
 
         self.tela = pygame.display.set_mode((const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
         pygame.display.set_caption(const.GAME_TITLE)
@@ -36,20 +36,19 @@ class Game:
         # Menu é sempre inicializado
         self.menu = Menu(self.tela, font_path=self.gothic_font_path, font_size=const.MENU_FONT_SIZE)
 
-        self.level = None
+        self.level = None # O nível será carregado por _load_level
 
         self.pontuacao = 0
 
         # --- Carrega a imagem de vitória ---
         win_image_full_path = os.path.join(base_dir, '..', const.GAME_OVER_WIN_IMAGE)
         try:
-            # Use convert_alpha() para imagens PNG com transparência
             self.win_background_image = pygame.image.load(win_image_full_path).convert_alpha()
             self.win_background_image = pygame.transform.scale(self.win_background_image,
                                                                (const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
         except pygame.error as e:
             print(f"Erro ao carregar a imagem de vitória '{win_image_full_path}': {e}")
-            self.win_background_image = None  # Define como None em caso de erro
+            self.win_background_image = None
 
     def _load_level(self, level_num: int):
         """
@@ -84,26 +83,27 @@ class Game:
             self.game_state = const.GAME_STATE_GAME_OVER_WIN
             return
 
+        # A instância do Player é criada dentro do construtor de Level
         self.level = Level(self.tela, bg_prefix, bg_count, bg_start_index, level_width)
         self.current_level_number = level_num
 
     def handle_events(self):
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                self.game_state = const.GAME_STATE_QUIT
+        # Este método no Game é para eventos que afetam o estado GERAL do jogo (ex: QUIT)
+        # Eventos específicos do Player (como pulo) serão tratados dentro do Level.run()
+        # Não iteramos pygame.event.get() aqui para não consumir eventos antes do Level.run()
+        pass # Mantido como pass para evitar consumo duplicado de eventos
+
 
     def _get_translated_win_text(self):
-        """
-        Acessa a linguagem atual do menu para obter a mensagem de vitória traduzida.
-        """
-        lang = self.menu.current_language  # Pega a linguagem selecionada no menu
-        return self.menu.translations[lang].get("win_message",
-                                                const.WIN_TEXT_EN)  # Retorna a tradução ou fallback para EN
+        lang = self.menu.current_language
+        return self.menu.translations[lang].get("win_message", const.WIN_TEXT_EN)
 
     def run(self):
         rodando = True
         while rodando:
-            self.handle_events()
+            # handle_events() é chamado aqui, mas ele não itera os eventos para o player.
+            # Os eventos são iterados e passados para o player dentro de Level.run().
+            self.handle_events() # Para eventos de QUIT do Pygame que podem vir a qualquer momento
 
             # --- Gerenciamento de Música baseado na Transição de Estado ---
             if self.game_state != self.previous_game_state:
@@ -129,11 +129,10 @@ class Game:
                     except pygame.error as e:
                         print(f"ERRO: Não foi possível carregar ou tocar a música do jogo: {e}")
 
-                # NOVO: Parar música ao ir para a tela de vitória
                 elif self.game_state == const.GAME_STATE_GAME_OVER_WIN and self.current_playing_music != 'none':
                     if pygame.mixer.music.get_busy():
                         pygame.mixer.music.stop()
-                    self.current_playing_music = 'none'  # Indica que nenhuma música está tocando ativamente
+                    self.current_playing_music = 'none'
 
                 elif self.game_state == const.GAME_STATE_QUIT and self.current_playing_music is not None:
                     if pygame.mixer.music.get_busy():
@@ -153,7 +152,14 @@ class Game:
 
             elif self.game_state == const.GAME_STATE_PLAYING:
                 if self.level:
-                    action_from_level = self.level.run(self.relogio)
+                    # Level.run() agora é responsável por:
+                    # 1. Obter os eventos do Pygame (pygame.event.get())
+                    # 2. Passar esses eventos para self.player.handle_event()
+                    # 3. Chamar self.player.update(delta_time)
+                    # 4. Chamar self.player.draw()
+                    # 5. Atualizar a câmera e desenhar o background
+                    action_from_level = self.level.run(self.relogio) # <-- Aqui o Level controla o Player
+
                     if action_from_level == "quit":
                         self.game_state = const.GAME_STATE_QUIT
                     elif action_from_level == "level_complete":
@@ -161,42 +167,38 @@ class Game:
                         self.current_level_number += 1
                         if self.current_level_number <= const.MAX_GAME_LEVELS:
                             self._load_level(self.current_level_number)
+                            # NOVO: Ao carregar um novo nível, o player é recriado dentro do Level.
+                            # Se você precisar resetar a posição do player (x e y) ao trocar de nível,
+                            # essa lógica deve ser adicionada no construtor de Level, ou o Level deve
+                            # ter um método para "resetar" o player.
+                            # Por enquanto, como o Player é recriado em Level, ele já deve estar na START_X/Y.
                         else:
                             print("DEBUG: Todos os níveis completos! Fim do jogo.")
-                            self.game_state = const.GAME_STATE_GAME_OVER_WIN  # Transiciona para o estado de vitória
+                            self.game_state = const.GAME_STATE_GAME_OVER_WIN
 
                 else:
                     print("Erro: Nível não inicializado no estado PLAYING. Voltando ao menu.")
                     self.game_state = const.GAME_STATE_MENU
 
             elif self.game_state == const.GAME_STATE_GAME_OVER_WIN:
-                # Eventos da tela de vitória
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         self.game_state = const.GAME_STATE_QUIT
                     if event.type == pygame.KEYDOWN:
-                        # Permite sair da tela de vitória pressionando Enter ou Escape
                         if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
-                            self.game_state = const.GAME_STATE_MENU  # Volta para o menu principal
-                            # Ao voltar para o menu, a música do menu será iniciada automaticamente
-                            # devido à lógica de transição de estado no `run`.
+                            self.game_state = const.GAME_STATE_MENU
 
-                # Desenha a tela de vitória
                 if self.win_background_image:
                     self.tela.blit(self.win_background_image, (0, 0))
                 else:
-                    self.tela.fill(const.BLACK_COLOR)  # Cor de fundo fallback se a imagem não carregar
+                    self.tela.fill(const.BLACK_COLOR)
 
-                # Renderiza o texto de vitória
                 win_text = self._get_translated_win_text()
-                # Reutiliza a fonte carregada para o menu para o texto de vitória
-                # self.menu.font já está carregada com o tamanho e caminho corretos
-                win_surface = self.menu.font.render(win_text, True, const.WHITE_COLOR)  # Cor de texto visível
-                win_rect = win_surface.get_rect(
-                    center=(const.SCREEN_WIDTH / 2, const.SCREEN_HEIGHT / 2))  # Centraliza na tela
+                win_surface = self.menu.font.render(win_text, True, const.WHITE_COLOR)
+                win_rect = win_surface.get_rect(center=(const.SCREEN_WIDTH / 2, const.SCREEN_HEIGHT / 2))
                 self.tela.blit(win_surface, win_rect)
 
-                pygame.display.flip()  # Atualiza a tela
+                pygame.display.flip()
 
             elif self.game_state == const.GAME_STATE_QUIT:
                 rodando = False

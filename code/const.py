@@ -23,6 +23,12 @@ PLAYER_SPRITE_FILENAME = 'playerwalk0.png'
 PLAYER_START_X = 100
 PLAYER_START_Y = 340
 
+# --- Constantes do Pulo ---
+JUMP_STRENGTH = 600       # Velocidade inicial do pulo (pixels/segundo)
+GRAVITY = 1500            # Aceleração da gravidade (pixels/segundo²)
+PLAYER_GROUND_Y = PLAYER_START_Y # Posição Y onde o jogador "aterriza"
+JUMP_ANIMATION_SPEED = 0.08 # Tempo em segundos para cada frame de pulo
+
 # --- Constantes do Nível ---
 LEVEL1_WIDTH = 3000
 LEVEL2_WIDTH = 4000
