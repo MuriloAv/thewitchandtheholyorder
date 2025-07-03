@@ -32,7 +32,7 @@ PLAYER_HEIGHT = 75
 PLAYER_SPRITE_FILENAME = 'playerwalk0.png'
 
 # --- Constantes do Menu ---
-MENU_FONT_SIZE = 48 # Reduzido de 64 para 48, por exemplo
+MENU_FONT_SIZE = 30 # Reduzido de 64 para 48, por exemplo
 MENU_ITEM_COLOR = WHITE_COLOR
 MENU_SELECTED_ITEM_COLOR = YELLOW_COLOR
 
