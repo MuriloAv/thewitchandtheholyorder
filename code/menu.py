@@ -66,7 +66,7 @@ class Menu:
             print(f"Erro ao carregar a imagem de fundo do menu: {e}")
             self.menu_bg_image = None
 
-        self.menusong_path = os.path.join(base_dir, '..', 'asset', 'songs', 'menusong.mp3')
+        self.menusong_path = os.path.join(base_dir, '..', 'asset', 'menusong.mp3')
 
     def _get_translated_text(self, key):
         return self.translations[self.current_language].get(key, key)

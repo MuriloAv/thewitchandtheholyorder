@@ -15,9 +15,9 @@ class Level:
         # Player setup (agora com asset de imagem)
         self.player_speed = const.PLAYER_SPEED
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        # Usando as constantes corrigidas para a pasta e o nome do arquivo do jogador
-        player_asset_path = os.path.join(base_dir, '..', 'asset', const.PLAYER_ASSET_FOLDER,
-                                         const.PLAYER_SPRITE_FILENAME)
+        # Agora o asset do jogador está diretamente na pasta 'asset'
+        player_asset_path = os.path.join(base_dir, '..', 'asset',
+                                         const.PLAYER_SPRITE_FILENAME)  # <-- LINHA ALTERADA
 
         self.player_image = None  # Inicializa self.player_image como None por padrão
         try:
@@ -50,9 +50,11 @@ class Level:
         scroll_factors = [0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0]
 
         # Carrega todas as camadas de bg1 a bg7
-        for i in range(1, 8):
+
+        for i in range(1, 7):
             layer_filename = f'lvl1bg{i}.png'
-            layer_path = os.path.join(base_dir, '..', 'asset', const.LEVEL_BACKGROUND_FOLDER, layer_filename)
+            # Agora os assets de background estão diretamente na pasta 'asset'
+            layer_path = os.path.join(base_dir, '..', 'asset', layer_filename)  # <-- LINHA ALTERADA
 
             try:
                 layer_image = pygame.image.load(layer_path).convert_alpha()
