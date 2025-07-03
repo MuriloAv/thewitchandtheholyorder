@@ -26,13 +26,13 @@ LEVEL_BACKGROUND_DEFAULT_LAYER = 'lvl1bg1.png'
 
 # --- Constantes do Jogador ---
 PLAYER_SPEED = 5
-PLAYER_WIDTH = 50
-PLAYER_HEIGHT = 50
+PLAYER_WIDTH = 70
+PLAYER_HEIGHT = 75
 # PLAYER_ASSET_FOLDER = 'playerwalk' # Esta deve estar removida ou comentada
-PLAYER_SPRITE_FILENAME = 'playerwalk1.png'
+PLAYER_SPRITE_FILENAME = 'playerwalk0.png'
 
 # --- Constantes do Menu ---
-MENU_FONT_SIZE = 64
+MENU_FONT_SIZE = 48 # Reduzido de 64 para 48, por exemplo
 MENU_ITEM_COLOR = WHITE_COLOR
 MENU_SELECTED_ITEM_COLOR = YELLOW_COLOR
 
