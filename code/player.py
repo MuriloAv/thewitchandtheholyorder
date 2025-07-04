@@ -1,26 +1,32 @@
-# code/player.py
-
 import pygame
 import os
 from . import const
+from .playershot import PlayerShot
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, position):
         super().__init__()
         self.name = "Player"
-
-        self.screen = pygame.display.get_surface()
         self.speed = const.PLAYER_SPEED
 
-        # --- Gerenciamento de Assets de Animação ---
+        # Controle de tiro
+        self.shoot_cooldown = 0.75
+        self.time_since_last_shot = 0.0
+        self.shots_group = pygame.sprite.Group()
+
+        # Estados de movimento e física
+        self.on_ground = True
+        self.is_jumping = False
+        self.y_velocity = 0
+
+        # Carregamento das animações
         self.idle_image = None
         self.walk_frames = []
-        self.jump_frames = []  # NOVO: Lista para os frames de pulo
-        self._load_animation_frames()  # Carrega todos os frames
+        self.jump_frames = []
+        self._load_animation_frames()
 
-        # Define a imagem inicial e o retângulo do jogador
-        # A imagem inicial é playerwalk0.png (idle)
+        # Imagem inicial
         if self.idle_image:
             self.image = self.idle_image
         elif self.walk_frames:
@@ -30,31 +36,24 @@ class Player(pygame.sprite.Sprite):
             self.image.fill(const.RED_COLOR)
             print("AVISO: Nenhuma imagem de player carregada. Usando fallback de cor sólida.")
 
-        # O rect define a posição e tamanho do jogador
         self.rect = self.image.get_rect(topleft=position)
 
-        # --- Variáveis de Animação de Caminhada (nomes ajustados para clareza) ---
-        self.current_walk_frame_index = 0  # Renomeado de current_frame_index
-        self.walk_animation_timer = 0.0  # Renomeado de animation_timer
-        self.walk_animation_speed = 0.1  # Renomeado de animation_speed
+        # Animações
+        self.current_walk_frame_index = 0
+        self.walk_animation_timer = 0.0
+        self.walk_animation_speed = 0.1
 
         self.is_moving = False
 
-        # --- NOVO: Variáveis de Pulo e Física ---
-        self.is_jumping = False  # Booleano para indicar se o personagem está pulando
-        self.on_ground = True  # Booleano para indicar se o personagem está no chão
-        self.y_velocity = 0  # Velocidade vertical do personagem
-
-        # Variáveis de Animação de Pulo
+        # Animação de pulo
         self.current_jump_frame_index = 0
         self.jump_animation_timer = 0.0
 
     def _load_animation_frames(self):
-        """Carrega todas as imagens de animação do jogador (idle, walk, jump)."""
         base_dir = os.path.dirname(os.path.abspath(__file__))
         asset_path = os.path.join(base_dir, '..', 'asset')
 
-        # Carrega a imagem idle (parado)
+        # Idle
         idle_file = os.path.join(asset_path, 'playerwalk0.png')
         try:
             temp_image = pygame.image.load(idle_file).convert_alpha()
@@ -63,7 +62,7 @@ class Player(pygame.sprite.Sprite):
             print(f"Erro ao carregar imagem IDLE do jogador '{idle_file}': {e}")
             self.idle_image = None
 
-        # Carrega os frames de caminhada (1 a 7)
+        # Walk frames
         for i in range(1, 8):
             walk_file = os.path.join(asset_path, f'playerwalk{i}.png')
             try:
@@ -73,40 +72,38 @@ class Player(pygame.sprite.Sprite):
             except pygame.error as e:
                 print(f"Erro ao carregar frame de caminhada '{walk_file}': {e}")
 
-        if not self.walk_frames:
-            print("AVISO: Nenhum frame de caminhada carregado. Animação de movimento não funcionará.")
-
-        # NOVO: Carrega os frames de pulo (1 a 6)
-        for i in range(1, 7):  # pulo1.png até pulo6.png
+        # Jump frames
+        for i in range(1, 7):
             jump_file = os.path.join(asset_path, f'pulo{i}.png')
             try:
                 temp_image = pygame.image.load(jump_file).convert_alpha()
-                # É importante escalar os frames de pulo para o mesmo tamanho do jogador
                 scaled_image = pygame.transform.scale(temp_image, (const.PLAYER_WIDTH, const.PLAYER_HEIGHT))
                 self.jump_frames.append(scaled_image)
             except pygame.error as e:
                 print(f"Erro ao carregar frame de pulo '{jump_file}': {e}")
 
-        if not self.jump_frames:
-            print("AVISO: Nenhum frame de pulo carregado. Animação de pulo não funcionará.")
-
-    # NOVO: Método para lidar com eventos discretos (como pressionar uma tecla)
     def handle_event(self, event):
-        """Processa eventos específicos como o pulo."""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP and self.on_ground:
                 self.is_jumping = True
                 self.on_ground = False
-                self.y_velocity = -const.JUMP_STRENGTH  # Y negativo é para cima em Pygame
-                self.current_jump_frame_index = 0  # Reinicia a animação de pulo
+                self.y_velocity = -const.JUMP_STRENGTH
+                self.current_jump_frame_index = 0
                 self.jump_animation_timer = 0.0
+            elif event.key == pygame.K_SPACE:
+                self.shoot()
+
+    def shoot(self):
+        if self.time_since_last_shot >= self.shoot_cooldown:
+            shot_pos = self.rect.midright
+            new_shot = PlayerShot(shot_pos, direction=1)
+            self.shots_group.add(new_shot)
+            self.time_since_last_shot = 0.0
+            print("Player atirou!")
 
     def update(self, delta_time):
-        """
-        Atualiza o estado do jogador, incluindo movimento horizontal, física de pulo e animação.
-        delta_time: Tempo em segundos desde o último frame.
-        """
-        # --- Movimento Horizontal (contínuo, usando teclas pressionadas) ---
+        self.time_since_last_shot += delta_time
+
         keys = pygame.key.get_pressed()
         dx = 0
         if keys[pygame.K_LEFT]:
@@ -114,47 +111,38 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_RIGHT]:
             dx = self.speed
 
-        # Só atualiza a posição horizontal se não estiver pulando ou no ar para simplificar o controle
-        # Para jogos mais complexos, o movimento horizontal pode ser mantido durante o pulo
         if self.on_ground:
             self.rect.x += dx
-        else:  # Se estiver no ar, o movimento horizontal pode ser um pouco mais lento
-            self.rect.x += dx * 0.7  # Exemplo: 70% da velocidade horizontal no ar
+        else:
+            self.rect.x += dx * 0.7
 
         self.is_moving = (dx != 0)
 
-        # --- NOVO: Aplicação da Gravidade e Movimento Vertical ---
-        if not self.on_ground:  # Aplica gravidade se não estiver no chão
+        if not self.on_ground:
             self.y_velocity += const.GRAVITY * delta_time
-
         self.rect.y += self.y_velocity * delta_time
 
-        # --- NOVO: Detecção de Colisão com o Chão ---
-        # Se o jogador descer abaixo da linha do chão (const.PLAYER_GROUND_Y)
         if self.rect.y >= const.PLAYER_GROUND_Y:
-            self.rect.y = const.PLAYER_GROUND_Y  # Fixa a posição no chão
-            if not self.on_ground:  # Se acabou de aterrissar (transição de "no ar" para "no chão")
+            self.rect.y = const.PLAYER_GROUND_Y
+            if not self.on_ground:
                 self.on_ground = True
                 self.is_jumping = False
-                self.y_velocity = 0  # Zera a velocidade vertical
-                # Após aterrissar, reseta animação de pulo e retorna para idle/walk
+                self.y_velocity = 0
                 self.current_jump_frame_index = 0
                 self.jump_animation_timer = 0.0
 
-        # --- Lógica de Seleção de Animação (Walk/Idle/Jump) ---
-        if self.is_jumping or not self.on_ground:  # Se estiver pulando ou no ar
+        # Atualiza animações (jump, walk, idle)
+        if self.is_jumping or not self.on_ground:
             if self.jump_frames:
                 self.jump_animation_timer += delta_time
                 if self.jump_animation_timer >= const.JUMP_ANIMATION_SPEED:
                     self.jump_animation_timer -= const.JUMP_ANIMATION_SPEED
-                    # Cicla pelos frames de pulo
                     self.current_jump_frame_index = (self.current_jump_frame_index + 1) % len(self.jump_frames)
                 self.image = self.jump_frames[self.current_jump_frame_index]
             else:
-                # Fallback se não houver frames de pulo (usa idle_image se existir)
                 if self.idle_image:
                     self.image = self.idle_image
-        elif self.is_moving:  # Se estiver no chão e movendo (caminhando)
+        elif self.is_moving:
             if self.walk_frames:
                 self.walk_animation_timer += delta_time
                 if self.walk_animation_timer >= self.walk_animation_speed:
@@ -162,26 +150,24 @@ class Player(pygame.sprite.Sprite):
                     self.current_walk_frame_index = (self.current_walk_frame_index + 1) % len(self.walk_frames)
                 self.image = self.walk_frames[self.current_walk_frame_index]
             else:
-                if self.idle_image:  # Fallback se não houver frames de caminhada
+                if self.idle_image:
                     self.image = self.idle_image
-        else:  # Se estiver no chão e parado (idle)
+        else:
             if self.idle_image:
                 self.image = self.idle_image
-            # Reseta o índice e timer da animação de caminhada/pulo ao parar/aterrissar
             self.current_walk_frame_index = 0
             self.walk_animation_timer = 0.0
             self.current_jump_frame_index = 0
             self.jump_animation_timer = 0.0
 
+        self.shots_group.update(delta_time)
+
     def draw(self, surface, camera_offset_x):
-        """
-        Desenha o jogador na tela, ajustando pela posição da câmera.
-        surface: A superfície do Pygame onde o jogador será desenhado.
-        camera_offset_x: O deslocamento horizontal da câmera.
-        """
         screen_x = int(self.rect.x - camera_offset_x)
         surface.blit(self.image, (screen_x, self.rect.y))
 
+        for shot in self.shots_group:
+            shot.draw(surface, camera_offset_x)
+
     def get_rect(self):
-        """Retorna o retângulo de colisão e posição atual do jogador."""
         return self.rect
