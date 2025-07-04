@@ -6,6 +6,7 @@ import random
 from . import const
 from .player import Player
 from .enemy import Enemy1, Enemy2, Enemy3
+from .entity_mediator import EntityMediator  # NOVO: Importa o mediador
 
 
 class Level:
@@ -25,6 +26,10 @@ class Level:
         self.enemies = pygame.sprite.Group()
         self.enemy_spawn_timer = 0.0
         self.next_spawn_time = random.uniform(const.ENEMY_SPAWN_INTERVAL_MIN, const.ENEMY_SPAWN_INTERVAL_MAX)
+
+        # --- NOVO: Grupos para projéteis (vazios por enquanto) ---
+        self.player_shots = pygame.sprite.Group()
+        self.enemy_shots = pygame.sprite.Group()
 
         # Camera setup
         self.camera_offset_x = 0
@@ -106,14 +111,12 @@ class Level:
         chosen_enemy_class = random.choice(enemy_types)
 
         spawn_x = self.camera_offset_x + self.screen_width + const.ENEMY_SPAWN_X_OFFSET
-
-        # ALTERADO: Inimigos aparecem na mesma altura Y do jogador (const.PLAYER_START_Y)
         spawn_y = const.PLAYER_START_Y
 
         new_enemy = chosen_enemy_class((spawn_x, spawn_y))
         self.enemies.add(new_enemy)
 
-        print(f"DEBUG: Spawned {chosen_enemy_class.__name__} at X={spawn_x}, Y={spawn_y} (PLAYER_START_Y)")
+        print(f"DEBUG: Spawned {new_enemy.name} at X={spawn_x}, Y={spawn_y} (PLAYER_START_Y)")
 
     def _draw_elements(self):
         """
@@ -148,6 +151,13 @@ class Level:
         for enemy in self.enemies:
             enemy.draw(self.screen, self.camera_offset_x)
 
+        # NOVO: Desenha os projéteis do jogador e inimigo (vazios por enquanto)
+        for shot in self.player_shots:
+            shot.draw(self.screen, self.camera_offset_x)  # Você precisará criar a classe Projectile.draw
+
+        for shot in self.enemy_shots:
+            shot.draw(self.screen, self.camera_offset_x)  # Você precisará criar a classe Projectile.draw
+
         pygame.display.flip()
 
     def run(self, clock):
@@ -159,7 +169,7 @@ class Level:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return "quit"
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if event.type == pygame.K_ESCAPE:  # Isso deve ser tratado como KEYDOWN
                     return "quit"
 
                 self.player.handle_event(event)
@@ -173,6 +183,16 @@ class Level:
 
             self.player.update(delta_time)
             self.enemies.update(delta_time)
+            self.player_shots.update(delta_time)  # NOVO: Atualiza projéteis do jogador
+            self.enemy_shots.update(delta_time)  # NOVO: Atualiza projéteis do inimigo
+
+            # NOVO: Chama o EntityMediator para verificar colisões
+            EntityMediator.check_all_collisions(
+                self.player,
+                self.enemies,
+                self.player_shots,
+                self.enemy_shots
+            )
 
             self._update_camera()
             self._draw_elements()
@@ -181,6 +201,8 @@ class Level:
             if self.player.rect.x >= self.level_width - self.player.rect.width:
                 print(f"Nível completo! Player atingiu o fim do nível ({self.level_width}).")
                 self.enemies.empty()
+                self.player_shots.empty()  # NOVO: Limpa projéteis ao fim do nível
+                self.enemy_shots.empty()  # NOVO: Limpa projéteis ao fim do nível
                 return "level_complete"
 
         return "continue"

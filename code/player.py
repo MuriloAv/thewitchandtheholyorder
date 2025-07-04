@@ -8,6 +8,7 @@ from . import const
 class Player(pygame.sprite.Sprite):
     def __init__(self, position):
         super().__init__()
+        self.name = "Player"
 
         self.screen = pygame.display.get_surface()
         self.speed = const.PLAYER_SPEED

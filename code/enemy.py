@@ -8,6 +8,7 @@ from . import const
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, position, speed, animation_speed, animation_prefix, num_frames):
         super().__init__()
+        self.name = f"{animation_prefix.replace('walk', '')}_{id(self)}"
 
         self.speed = speed  # Velocidade do inimigo (pixels/segundo)
         self.animation_speed = animation_speed  # Tempo por frame de animação
