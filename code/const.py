@@ -50,7 +50,7 @@ ENEMY3_HEALTH = 120
 
 # Constantes para o Spawn dos Inimigos
 ENEMY_SPAWN_INTERVAL_MIN = 1.0 # Tempo mínimo em segundos entre spawns
-ENEMY_SPAWN_INTERVAL_MAX = 3.0 # Tempo máximo em segundos entre spawns
+ENEMY_SPAWN_INTERVAL_MAX = 1.5 # Tempo máximo em segundos entre spawns
 ENEMY_SPAWN_X_OFFSET = 50 # Distância fora da tela à direita para aparecer
 
 # --- Constantes do Nível ---
