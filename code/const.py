@@ -29,6 +29,30 @@ GRAVITY = 1500            # Aceleração da gravidade (pixels/segundo²)
 PLAYER_GROUND_Y = PLAYER_START_Y # Posição Y onde o jogador "aterriza"
 JUMP_ANIMATION_SPEED = 0.08 # Tempo em segundos para cada frame de pulo
 
+# --- Constantes dos Inimigos ---
+ENEMY_WIDTH = 80 # Largura padrão para todos os inimigos (ajuste se quiser tamanhos diferentes)
+ENEMY_HEIGHT = 80 # Altura padrão para todos os inimigos
+
+# Inimigo 1 (6 frames: enemy1walk1 a enemy1walk6)
+ENEMY1_SPEED = 300 # Velocidade em pixels/segundo
+ENEMY1_ANIMATION_SPEED = 0.1 # Tempo em segundos para cada frame
+ENEMY1_HEALTH = 100 # Exemplo de vida
+
+# Inimigo 2 (4 frames: enemy2walk1 a enemy2walk4)
+ENEMY2_SPEED = 400
+ENEMY2_ANIMATION_SPEED = 0.12
+ENEMY2_HEALTH = 75
+
+# Inimigo 3 (5 frames: enemy3walk1 a enemy3walk5)
+ENEMY3_SPEED = 350
+ENEMY3_ANIMATION_SPEED = 0.09
+ENEMY3_HEALTH = 120
+
+# Constantes para o Spawn dos Inimigos
+ENEMY_SPAWN_INTERVAL_MIN = 1.0 # Tempo mínimo em segundos entre spawns
+ENEMY_SPAWN_INTERVAL_MAX = 3.0 # Tempo máximo em segundos entre spawns
+ENEMY_SPAWN_X_OFFSET = 50 # Distância fora da tela à direita para aparecer
+
 # --- Constantes do Nível ---
 LEVEL1_WIDTH = 3000
 LEVEL2_WIDTH = 4000
