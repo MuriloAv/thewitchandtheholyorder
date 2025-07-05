@@ -1,7 +1,7 @@
 # code/menu.py
 import pygame
 import os
-from . import const  # Importa o módulo de constantes
+from . import const
 
 
 class Menu:
@@ -9,154 +9,172 @@ class Menu:
         self.screen = screen
         self.width, self.height = self.screen.get_size()
 
-        # Configuração da fonte - Usando const.MENU_FONT_SIZE
-        if font_size is None:
-            font_size = const.MENU_FONT_SIZE
-
-        if font_path and os.path.exists(font_path):
+        font_size = font_size or const.MENU_FONT_SIZE
+        try:
             self.font = pygame.font.Font(font_path, font_size)
-        else:
-            print(f"Aviso: Fonte '{font_path}' não encontrada. Usando fonte padrão do Pygame.")
+            self.controls_font = pygame.font.Font(font_path, 32)
+        except (pygame.error, FileNotFoundError):
             self.font = pygame.font.Font(None, font_size)
+            self.controls_font = pygame.font.Font(None, 36)
+            print(f"Aviso: Fonte '{font_path}' não encontrada. Usando fonte padrão.")
 
-        # --- Sistema de Tradução ---
+        self.current_menu_state = "main"
+
+        self.menu_options = {
+            "main": ["start_game", const.OPTIONS_TEXT_KEY, "quit_game"],
+            "options": [const.LANGUAGE_TEXT_KEY, const.CONTROLS_TEXT_KEY, const.BACK_TEXT_KEY],
+            "language": ["language_en", "language_pt", const.BACK_TEXT_KEY],
+            "controls": [const.BACK_TEXT_KEY]
+        }
+
+        # --- CORREÇÃO AQUI: Readicionando as traduções que faltavam ---
         self.translations = {
             "en": {
-                "title": const.GAME_TITLE,
-                "start_game": "Start Game",
-                "language_en": "English (EN)",
-                "language_pt": "Portuguese (BR)",
-                "quit_game": "Quit",
-                "win_message": const.WIN_TEXT_EN,
-                "game_over_message": const.GAME_OVER_TEXT_EN # Adicionado: Mensagem de Game Over em inglês
+                "title": const.GAME_TITLE, "start_game": "Start Game", const.OPTIONS_TEXT_KEY: "Options",
+                "quit_game": "Quit", "language_en": "English (EN)", "language_pt": "Portuguese (BR)",
+                const.LANGUAGE_TEXT_KEY: "Language", const.CONTROLS_TEXT_KEY: "Controls",
+                const.CONTROLS_MOVE_KEY: "Move:", const.CONTROLS_JUMP_KEY: "Jump:",
+                const.CONTROLS_ATTACK_KEY: "Attack:", const.BACK_TEXT_KEY: "Back",
+                "win_message": const.WIN_TEXT_EN,  # <-- LINHA READICIONADA
+                "game_over_message": const.GAME_OVER_TEXT_EN  # <-- LINHA READICIONADA
             },
             "pt": {
-                "title": "A Bruxa e a Santa Ordem",
-                "start_game": "Iniciar Jogo",
-                "language_en": "Inglês (EN)",
-                "language_pt": "Português (BR)",
-                "quit_game": "Sair",
-                "win_message": const.WIN_TEXT_PT,
-                "game_over_message": const.GAME_OVER_TEXT_PT # Adicionado: Mensagem de Game Over em português
+                "title": "A Bruxa e a Santa Ordem", "start_game": "Iniciar Jogo", const.OPTIONS_TEXT_KEY: "Opções",
+                "quit_game": "Sair", "language_en": "Inglês (EN)", "language_pt": "Português (BR)",
+                const.LANGUAGE_TEXT_KEY: "Idioma", const.CONTROLS_TEXT_KEY: "Controles",
+                const.CONTROLS_MOVE_KEY: "Mover:", const.CONTROLS_JUMP_KEY: "Pular:",
+                const.CONTROLS_ATTACK_KEY: "Atacar:", const.BACK_TEXT_KEY: "Voltar",
+                "win_message": const.WIN_TEXT_PT,  # <-- LINHA READICIONADA
+                "game_over_message": const.GAME_OVER_TEXT_PT  # <-- LINHA READICIONADA
             }
         }
         self.current_language = "pt"
 
-        # Opções selecionáveis do menu (as chaves usadas no dicionário de traduções)
-        self.selectable_options = [
-            "start_game",
-            "language_en",
-            "language_pt",
-            "quit_game"
-        ]
-
-        # Variáveis de Interatividade (Foco/Hover)
         self.selected_index = 0
-        self.hovered_index = -1
-        self.option_rects = []  # Será preenchido em draw()
+        self.option_rects = []
 
-        # Carregando Imagem de Fundo e Música
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.menu_bg_path = os.path.join(base_dir, '..', 'asset', 'menubg.png')
         try:
-            self.menu_bg_image = pygame.image.load(self.menu_bg_path).convert()
-            self.menu_bg_image = pygame.transform.scale(self.menu_bg_image, (self.width, self.height))
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            bg_path = os.path.join(base_dir, '..', 'asset', 'menubg.png')
+            self.menu_bg_image = pygame.transform.scale(pygame.image.load(bg_path).convert(), (self.width, self.height))
         except pygame.error as e:
+            self.menu_bg_image = None;
             print(f"Erro ao carregar a imagem de fundo do menu: {e}")
-            self.menu_bg_image = None
-
-        self.menusong_path = os.path.join(base_dir, '..', 'asset', 'menusong.mp3')
 
     def _get_translated_text(self, key):
-        # Garante que a chave existe na linguagem atual, caso contrário, retorna a própria chave
-        return self.translations[self.current_language].get(key, key)
+        return self.translations[self.current_language].get(key, key.replace("_", " ").title())
 
-    def _handle_option_selection(self, index):
-        if 0 <= index < len(self.selectable_options):
-            selected_key = self.selectable_options[index]
+    def _handle_selection(self):
+        options = self.menu_options[self.current_menu_state]
+        selected_key = options[self.selected_index]
 
-            if selected_key == "start_game":
-                return "start_game"
-            elif selected_key == "quit_game":
-                return "quit"
-            elif selected_key == "language_en":
-                self.current_language = "en"
-            elif selected_key == "language_pt":
-                self.current_language = "pt"
+        if selected_key == "start_game": return "start_game"
+        if selected_key == "quit_game": return "quit"
+
+        if selected_key == const.OPTIONS_TEXT_KEY:
+            self.current_menu_state = "options"
+        elif selected_key == const.LANGUAGE_TEXT_KEY:
+            self.current_menu_state = "language"
+        elif selected_key == const.CONTROLS_TEXT_KEY:
+            self.current_menu_state = "controls"
+        elif selected_key == const.BACK_TEXT_KEY:
+            if self.current_menu_state in ["language", "controls"]:
+                self.current_menu_state = "options"
+            elif self.current_menu_state == "options":
+                self.current_menu_state = "main"
+
+        elif selected_key == "language_en":
+            self.current_language = "en"
+        elif selected_key == "language_pt":
+            self.current_language = "pt"
+
+        self.selected_index = 0
         return None
 
-    def draw(self):
-        if self.menu_bg_image:
-            self.screen.blit(self.menu_bg_image, (0, 0))
-        else:
-            self.screen.fill(const.BLACK_COLOR)
+    def _draw_static_info(self):
+        if self.current_menu_state == 'controls':
+            y_pos = self.height * 0.4
 
-        # Renderiza e posiciona o título do jogo
-        title_surface = self.font.render(self._get_translated_text("title"), True,
-                                         const.PURPLE_COLOR)
-        title_rect = title_surface.get_rect(
-            center=(self.width / 2, const.SCREEN_HEIGHT * const.MENU_TITLE_Y_FACTOR))
-        self.screen.blit(title_surface, title_rect)
+            controls_title_surf = self.font.render(self._get_translated_text(const.CONTROLS_TEXT_KEY), True,
+                                                   const.WHITE_COLOR)
+            self.screen.blit(controls_title_surf, controls_title_surf.get_rect(center=(self.width / 2, y_pos)))
+            y_pos += 60
+
+            controls = {
+                const.CONTROLS_MOVE_KEY: "← → (Setas Esquerda e Direita)",
+                const.CONTROLS_JUMP_KEY: "↑ (Seta para Cima)",
+                const.CONTROLS_ATTACK_KEY: "ESPAÇO"
+            }
+            for key, value in controls.items():
+                text = f"{self._get_translated_text(key)} {value}"
+                control_surf = self.controls_font.render(text, True, const.WHITE_COLOR)
+                self.screen.blit(control_surf, control_surf.get_rect(center=(self.width / 2, y_pos)))
+                y_pos += 45
+
+    def draw(self):
+        self.screen.blit(self.menu_bg_image, (0, 0)) if self.menu_bg_image else self.screen.fill(const.BLACK_COLOR)
+        title_surface = self.font.render(self._get_translated_text("title"), True, const.PURPLE_COLOR)
+        self.screen.blit(title_surface,
+                         title_surface.get_rect(center=(self.width / 2, self.height * const.MENU_TITLE_Y_FACTOR)))
+
+        self._draw_static_info()
 
         self.option_rects.clear()
+        current_options = self.menu_options[self.current_menu_state]
 
-        line_height = self.font.get_height() + 10
-        total_options_height = len(self.selectable_options) * line_height
-
-        y_start_options = title_rect.bottom + 30
-
-        for i, option_key in enumerate(self.selectable_options):
+        y_start_options = self.height * 0.45
+        for i, option_key in enumerate(current_options):
             text = self._get_translated_text(option_key)
+            color = const.HIGHLIGHT_COLOR if i == self.selected_index else const.WHITE_COLOR
+            option_surface = self.font.render(text, True, color)
 
-            if i == self.selected_index or i == self.hovered_index:
-                text_color = const.HIGHLIGHT_COLOR
+            if option_key == const.BACK_TEXT_KEY:
+                y_pos = self.height - 70
             else:
-                text_color = const.PURPLE_COLOR
+                y_pos = y_start_options + i * 55
 
-            option_surface = self.font.render(text, True, text_color)
+            option_rect = option_surface.get_rect(center=(self.width / 2, y_pos))
+            if self.current_menu_state != 'controls' or option_key == const.BACK_TEXT_KEY:
+                self.screen.blit(option_surface, option_rect)
 
-            option_rect = option_surface.get_rect(center=(self.width / 2, y_start_options + i * line_height))
-
-            self.screen.blit(option_surface, option_rect)
             self.option_rects.append(option_rect)
 
         pygame.display.flip()
 
     def run(self):
-        menu_running = True
-        while menu_running:
+        while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return "quit"
 
-                if event.type == pygame.MOUSEMOTION:
-                    self.hovered_index = -1
-                    for i, rect in enumerate(self.option_rects):
-                        if rect.collidepoint(event.pos):
-                            self.hovered_index = i
-                            self.selected_index = i
-                            break
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1 and self.hovered_index != -1:
-                        action = self._handle_option_selection(self.hovered_index)
-                        if action:
-                            return action
-
                 if event.type == pygame.KEYDOWN:
+                    current_options = self.menu_options[self.current_menu_state]
                     if event.key == pygame.K_UP:
-                        self.selected_index = (self.selected_index - 1) % len(self.selectable_options)
-                        self.hovered_index = -1
+                        self.selected_index = (self.selected_index - 1) % len(current_options)
                     elif event.key == pygame.K_DOWN:
-                        self.selected_index = (self.selected_index + 1) % len(self.selectable_options)
-                        self.hovered_index = -1
+                        self.selected_index = (self.selected_index + 1) % len(current_options)
                     elif event.key == pygame.K_RETURN:
-                        action = self._handle_option_selection(self.selected_index)
-                        if action:
-                            return action
+                        action = self._handle_selection()
+                        if action: return action
                     elif event.key == pygame.K_ESCAPE:
-                        return "quit"
+                        if self.current_menu_state != "main":
+                            if self.current_menu_state in ["language", "controls"]:
+                                self.current_menu_state = "options"
+                            else:  # options
+                                self.current_menu_state = "main"
+                            self.selected_index = 0
+                        else:
+                            return "quit"
+
+                if event.type == pygame.MOUSEMOTION:
+                    for i, rect in enumerate(self.option_rects):
+                        if rect.collidepoint(event.pos): self.selected_index = i; break
+
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if self.option_rects:
+                        if self.option_rects[self.selected_index].collidepoint(event.pos):
+                            action = self._handle_selection()
+                            if action: return action
 
             self.draw()
             pygame.time.Clock().tick(const.FPS)
-
-        return "quit"
