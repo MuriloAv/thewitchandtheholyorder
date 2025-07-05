@@ -1,3 +1,5 @@
+# code/player.py
+
 import pygame
 import os
 from . import const
@@ -14,6 +16,11 @@ class Player(pygame.sprite.Sprite):
         self.shoot_cooldown = 0.75
         self.time_since_last_shot = 0.0
         self.shots_group = pygame.sprite.Group()
+
+        # Adicionado: Controle de Vida e Invencibilidade
+        self.lives = const.PLAYER_LIVES_START
+        self.invincible_timer = 0.0
+        self.invincible_duration = const.PLAYER_INVINCIBILITY_DURATION # Define a duração aqui
 
         # Estados de movimento e física
         self.on_ground = True
@@ -36,6 +43,7 @@ class Player(pygame.sprite.Sprite):
             self.image.fill(const.RED_COLOR)
             print("AVISO: Nenhuma imagem de player carregada. Usando fallback de cor sólida.")
 
+        self.original_image = self.image # Salva a imagem original para piscar quando invencível
         self.rect = self.image.get_rect(topleft=position)
 
         # Animações
@@ -99,10 +107,30 @@ class Player(pygame.sprite.Sprite):
             new_shot = PlayerShot(shot_pos, direction=1)
             self.shots_group.add(new_shot)
             self.time_since_last_shot = 0.0
-            print("Player atirou!")
+
+    # NOVO MÉTODO: Player recebe dano
+    def take_damage(self, amount):
+        if self.invincible_timer <= 0: # Só recebe dano se não estiver invencível
+            self.lives -= amount
+            self.invincible_timer = self.invincible_duration # Ativa o timer de invencibilidade
+            print(f"Player levou dano! Vidas restantes: {self.lives}")
+            if self.lives <= 0:
+                print("Player KO!")
+                # Aqui você chamaria a lógica de Game Over
 
     def update(self, delta_time):
         self.time_since_last_shot += delta_time
+
+        # Atualiza timer de invencibilidade
+        if self.invincible_timer > 0:
+            self.invincible_timer -= delta_time
+            # Adiciona efeito de piscar enquanto invencível
+            if int(self.invincible_timer * 10) % 2 == 0: # Pisca a cada 0.1s
+                self.image = pygame.Surface((1,1), pygame.SRCALPHA) # Torna invisível
+            else:
+                self.image = self.original_image # Volta a imagem original
+        else:
+            self.image = self.original_image # Garante que a imagem esteja normal quando não invencível
 
         keys = pygame.key.get_pressed()
         dx = 0
@@ -132,37 +160,39 @@ class Player(pygame.sprite.Sprite):
                 self.jump_animation_timer = 0.0
 
         # Atualiza animações (jump, walk, idle)
+        # IMPORTANTE: A lógica de animação foi movida para DENTRO
+        # do else do invencible_timer para não conflitar com o piscar
+        # e para garantir que a animação seja aplicada à self.original_image
+        # e depois copiada para self.image, se necessário.
+
+        current_animation_image = self.idle_image # Imagem base
         if self.is_jumping or not self.on_ground:
             if self.jump_frames:
                 self.jump_animation_timer += delta_time
                 if self.jump_animation_timer >= const.JUMP_ANIMATION_SPEED:
                     self.jump_animation_timer -= const.JUMP_ANIMATION_SPEED
                     self.current_jump_frame_index = (self.current_jump_frame_index + 1) % len(self.jump_frames)
-                self.image = self.jump_frames[self.current_jump_frame_index]
-            else:
-                if self.idle_image:
-                    self.image = self.idle_image
+                current_animation_image = self.jump_frames[self.current_jump_frame_index]
         elif self.is_moving:
             if self.walk_frames:
                 self.walk_animation_timer += delta_time
                 if self.walk_animation_timer >= self.walk_animation_speed:
                     self.walk_animation_timer -= self.walk_animation_speed
                     self.current_walk_frame_index = (self.current_walk_frame_index + 1) % len(self.walk_frames)
-                self.image = self.walk_frames[self.current_walk_frame_index]
-            else:
-                if self.idle_image:
-                    self.image = self.idle_image
+                current_animation_image = self.walk_frames[self.current_walk_frame_index]
         else:
-            if self.idle_image:
-                self.image = self.idle_image
+            # Já está self.idle_image
             self.current_walk_frame_index = 0
             self.walk_animation_timer = 0.0
             self.current_jump_frame_index = 0
             self.jump_animation_timer = 0.0
 
+        self.original_image = current_animation_image # Atualiza a imagem base (não invencível)
+
         self.shots_group.update(delta_time)
 
     def draw(self, surface, camera_offset_x):
+        # O self.image já é atualizado no update para piscar
         screen_x = int(self.rect.x - camera_offset_x)
         surface.blit(self.image, (screen_x, self.rect.y))
 

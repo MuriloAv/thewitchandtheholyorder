@@ -1,3 +1,5 @@
+# code/level.py
+
 import pygame
 import os
 import random
@@ -15,22 +17,18 @@ class Level:
         self.level_width = level_actual_width
         self.level_number = int(bg_prefix[3])
 
-        # Player e seus tiros
         player_start_position = (const.PLAYER_START_X, const.PLAYER_START_Y)
         self.player = Player(player_start_position)
-        self.player_shots = self.player.shots_group  # referência ao grupo de tiros do player (não muda!)
+        self.player_shots = self.player.shots_group
 
-        # Enemies e tiros inimigos
         self.enemies = pygame.sprite.Group()
-        self.enemy_shots = pygame.sprite.Group()  # Grupo global único para tiros inimigos
+        self.enemy_shots = pygame.sprite.Group()
 
         self.enemy_spawn_timer = 0.0
         self.next_spawn_time = random.uniform(const.ENEMY_SPAWN_INTERVAL_MIN, const.ENEMY_SPAWN_INTERVAL_MAX)
 
-        # Câmera
         self.camera_offset_x = 0
 
-        # Parallax background
         self.parallax_layers = []
         scroll_factors = [0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.0][:bg_count]
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +50,23 @@ class Level:
 
         if not self.parallax_layers:
             self.fallback_bg_color = const.BLUE_SKY_COLOR
+
+        self.heart_image = None
+        heart_image_path = os.path.join(base_dir, '..', 'asset', 'lifeplayer.PNG')
+        try:
+            temp_heart_img = pygame.image.load(heart_image_path).convert_alpha()
+            self.heart_image = pygame.transform.scale(temp_heart_img, (30, 25))
+        except pygame.error as e:
+            print(f"ERRO: Não foi possível carregar a imagem do coração '{heart_image_path}': {e}")
+            self.heart_image = pygame.Surface((30, 25), pygame.SRCALPHA)
+            self.heart_image.fill(const.RED_COLOR)
+
+        font_path = os.path.join(base_dir, '..', 'asset', f'{const.FONT_NAME}.ttf')
+        try:
+            self.font = pygame.font.Font(font_path, 24)
+        except Exception as e:
+            print(f"ERRO: Não foi possível carregar a fonte '{font_path}': {e}. Usando fonte padrão.")
+            self.font = pygame.font.Font(None, 24)
 
     def _update_camera(self):
         target_x = self.player.rect.centerx - self.screen_width // 2
@@ -82,18 +97,21 @@ class Level:
         else:
             self.screen.fill(self.fallback_bg_color)
 
-        # Desenhar player e seus tiros
         self.player.draw(self.screen, self.camera_offset_x)
 
-        # Desenhar inimigos e seus tiros
         for enemy in self.enemies:
             enemy.draw(self.screen, self.camera_offset_x)
         for shot in self.enemy_shots:
             shot.draw(self.screen, self.camera_offset_x)
 
-        # Desenhar tiros do player
         for shot in self.player_shots:
             shot.draw(self.screen, self.camera_offset_x)
+
+        if self.heart_image:
+            self.screen.blit(self.heart_image, (10, 10))
+
+        lives_text_surface = self.font.render(f"x{self.player.lives}", True, const.WHITE_COLOR)
+        self.screen.blit(lives_text_surface, (10 + self.heart_image.get_width() + 5, 10))
 
         pygame.display.flip()
 
@@ -106,28 +124,25 @@ class Level:
                     return "quit"
                 self.player.handle_event(event)
 
-            # Spawn de inimigos
             self.enemy_spawn_timer += delta_time
             if self.enemy_spawn_timer >= self.next_spawn_time:
                 self._spawn_enemy()
                 self.enemy_spawn_timer = 0.0
                 self.next_spawn_time = random.uniform(const.ENEMY_SPAWN_INTERVAL_MIN, const.ENEMY_SPAWN_INTERVAL_MAX)
 
-            # Atualizar entidades
             self.player.update(delta_time)
             self.enemies.update(delta_time)
 
-            # Atualizar tiros do player (grupo gerenciado internamente pelo player)
-            self.player_shots.update(delta_time)
-
-            # Atualizar tiros dos inimigos — adiciona tiros novos de cada inimigo no grupo global
             for enemy in self.enemies:
-                for shot in enemy.shots_group:
-                    if shot not in self.enemy_shots:
+                for shot in list(enemy.shots_group):
+                    if shot.alive():
                         self.enemy_shots.add(shot)
             self.enemy_shots.update(delta_time)
 
-            # Colisões
+            for shot in list(self.enemy_shots):
+                if not shot.alive():
+                    self.enemy_shots.remove(shot)
+
             EntityMediator.check_all_collisions(
                 self.player,
                 self.enemies,
@@ -135,10 +150,18 @@ class Level:
                 self.enemy_shots
             )
 
+            # NOVO: Se o player morreu, retorna o estado de GAME OVER (derrota)
+            if self.player.lives <= 0:
+                print("GAME OVER - Player sem vidas!")
+                self.enemies.empty()
+                self.player_shots.empty()
+                self.enemy_shots.empty()
+                # CORREÇÃO: Certifique-se de retornar a constante, não a string "game_over_lose"
+                return const.GAME_STATE_GAME_OVER_LOSE
+
             self._update_camera()
             self._draw_elements()
 
-            # Checa fim do nível
             if self.player.rect.x >= self.level_width - self.player.rect.width:
                 print("Nível completo!")
                 self.enemies.empty()

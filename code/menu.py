@@ -27,7 +27,8 @@ class Menu:
                 "language_en": "English (EN)",
                 "language_pt": "Portuguese (BR)",
                 "quit_game": "Quit",
-                "win_message": const.WIN_TEXT_EN  # Adicionar tradução para a mensagem de vitória em inglês
+                "win_message": const.WIN_TEXT_EN,
+                "game_over_message": const.GAME_OVER_TEXT_EN # Adicionado: Mensagem de Game Over em inglês
             },
             "pt": {
                 "title": "A Bruxa e a Santa Ordem",
@@ -35,7 +36,8 @@ class Menu:
                 "language_en": "Inglês (EN)",
                 "language_pt": "Português (BR)",
                 "quit_game": "Sair",
-                "win_message": const.WIN_TEXT_PT  # Adicionar tradução para a mensagem de vitória em português
+                "win_message": const.WIN_TEXT_PT,
+                "game_over_message": const.GAME_OVER_TEXT_PT # Adicionado: Mensagem de Game Over em português
             }
         }
         self.current_language = "pt"
@@ -66,6 +68,7 @@ class Menu:
         self.menusong_path = os.path.join(base_dir, '..', 'asset', 'menusong.mp3')
 
     def _get_translated_text(self, key):
+        # Garante que a chave existe na linguagem atual, caso contrário, retorna a própria chave
         return self.translations[self.current_language].get(key, key)
 
     def _handle_option_selection(self, index):
@@ -91,17 +94,16 @@ class Menu:
         # Renderiza e posiciona o título do jogo
         title_surface = self.font.render(self._get_translated_text("title"), True,
                                          const.PURPLE_COLOR)
-        # Usando a nova constante para a posição Y do título
         title_rect = title_surface.get_rect(
-            center=(self.width / 2, const.SCREEN_HEIGHT * const.MENU_TITLE_Y_FACTOR))  # <--- LINHA ALTERADA
+            center=(self.width / 2, const.SCREEN_HEIGHT * const.MENU_TITLE_Y_FACTOR))
         self.screen.blit(title_surface, title_rect)
 
         self.option_rects.clear()
 
-        line_height = self.font.get_height() + 10  # Altura da linha incluindo um padding vertical
+        line_height = self.font.get_height() + 10
         total_options_height = len(self.selectable_options) * line_height
 
-        y_start_options = title_rect.bottom + 30  # 30 pixels de espaçamento após o título
+        y_start_options = title_rect.bottom + 30
 
         for i, option_key in enumerate(self.selectable_options):
             text = self._get_translated_text(option_key)
@@ -113,7 +115,6 @@ class Menu:
 
             option_surface = self.font.render(text, True, text_color)
 
-            # Posiciona cada opção a partir de y_start_options
             option_rect = option_surface.get_rect(center=(self.width / 2, y_start_options + i * line_height))
 
             self.screen.blit(option_surface, option_rect)

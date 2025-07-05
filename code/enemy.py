@@ -93,7 +93,7 @@ class Enemy1(Enemy):
     def __init__(self, position):
         super().__init__(position, const.ENEMY1_SPEED, const.ENEMY1_ANIMATION_SPEED, "enemy1walk", 6)
         self.health = const.ENEMY1_HEALTH
-        self.shoot_cooldown = 0.3
+        self.shoot_cooldown = 0.5
 
     def shoot(self):
         # shot_pos = self.rect.midleft # Antigo
