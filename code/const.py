@@ -19,41 +19,45 @@ HIGHLIGHT_COLOR = (255, 165, 0)
 PLAYER_SPEED = 5
 PLAYER_WIDTH = 80
 PLAYER_HEIGHT = 80
-PLAYER_SPRITE_FILENAME = 'playerwalk0.png'
 PLAYER_START_X = 100
-PLAYER_START_Y = 340
-PLAYER_LIVES_START = 10 # Vida inicial do jogador
-PLAYER_INVINCIBILITY_DURATION = 1.5 # Duração da invencibilidade após levar dano (em segundos)
+PLAYER_START_Y = 420
+PLAYER_LIVES_START = 10
+PLAYER_INVINCIBILITY_DURATION = 1.5
+PLAYER_SHOOT_COOLDOWN = 1.5  # <-- ADICIONADO: Cadência de tiro do jogador (aumente para tiro mais lento)
 
 # --- Constantes do Pulo ---
-JUMP_STRENGTH = 600       # Velocidade inicial do pulo (pixels/segundo)
-GRAVITY = 1500            # Aceleração da gravidade (pixels/segundo²)
+JUMP_STRENGTH = 600
+GRAVITY = 1500
 PLAYER_GROUND_Y = PLAYER_START_Y # Posição Y onde o jogador "aterriza"
-JUMP_ANIMATION_SPEED = 0.08 # Tempo em segundos para cada frame de pulo
+JUMP_ANIMATION_SPEED = 0.08
 
 # --- Constantes dos Inimigos ---
-ENEMY_WIDTH = 80 # Largura padrão para todos os inimigos (ajuste se quiser tamanhos diferentes)
-ENEMY_HEIGHT = 80 # Altura padrão para todos os inimigos
+ENEMY_WIDTH = 80
+ENEMY_HEIGHT = 80
+ENEMY_START_Y = 340 # <-- ADICIONADO: Altura inicial dos inimigos, independente do jogador
 
 # Inimigo 1 (6 frames: enemy1walk1 a enemy1walk6)
-ENEMY1_SPEED = 200 # Velocidade em pixels/segundo
-ENEMY1_ANIMATION_SPEED = 0.1 # Tempo em segundos para cada frame
-ENEMY1_HEALTH = 1 # Vida dos inimigos — para morrer com 1 tiro do player (vida=1)
+ENEMY1_SPEED = 200
+ENEMY1_ANIMATION_SPEED = 0.1
+ENEMY1_HEALTH = 1
+ENEMY1_SHOOT_COOLDOWN = 1.2 # <-- ADICIONADO: Cadência de tiro (diminua para tiro mais rápido)
 
 # Inimigo 2 (4 frames: enemy2walk1 a enemy2walk4)
 ENEMY2_SPEED = 250
 ENEMY2_ANIMATION_SPEED = 0.12
 ENEMY2_HEALTH = 1
+ENEMY2_SHOOT_COOLDOWN = 1.0 # <-- ADICIONADO
 
 # Inimigo 3 (5 frames: enemy3walk1 a enemy3walk5)
 ENEMY3_SPEED = 275
 ENEMY3_ANIMATION_SPEED = 0.09
 ENEMY3_HEALTH = 1
+ENEMY3_SHOOT_COOLDOWN = 0.8 # <-- ADICIONADO
 
 # Constantes para o Spawn dos Inimigos
-ENEMY_SPAWN_INTERVAL_MIN = 1.0 # Tempo mínimo em segundos entre spawns
-ENEMY_SPAWN_INTERVAL_MAX = 1.5 # Tempo máximo em segundos entre spawns
-ENEMY_SPAWN_X_OFFSET = 50 # Distância fora da tela à direita para aparecer
+ENEMY_SPAWN_INTERVAL_MIN = 1.0
+ENEMY_SPAWN_INTERVAL_MAX = 1.5
+ENEMY_SPAWN_X_OFFSET = 50
 
 # --- Constantes do Nível ---
 LEVEL1_WIDTH = 3500
@@ -83,16 +87,16 @@ MENU_TITLE_Y_FACTOR = 0.50
 # --- Estados do Jogo (Usados em game.py) ---
 GAME_STATE_MENU = 0
 GAME_STATE_PLAYING = 1
-GAME_STATE_GAME_OVER_WIN = 2 # Já existia
-GAME_STATE_GAME_OVER_LOSE = 3 # NOVO ESTADO!
+GAME_STATE_GAME_OVER_WIN = 2
+GAME_STATE_GAME_OVER_LOSE = 3
 GAME_STATE_QUIT = 4
 
 # --- Constantes da Tela de Fim de Jogo ---
-GAME_OVER_WIN_IMAGE = 'asset/scorebg.png' # Caminho para a imagem de fundo de vitória
-GAME_OVER_LOSE_IMAGE = 'asset/dead.PNG' # Caminho para sua imagem de game over (derrota)
+GAME_OVER_WIN_IMAGE = 'asset/scorebg.png'
+GAME_OVER_LOSE_IMAGE = 'asset/dead.PNG'
 
 WIN_TEXT_PT = "Você venceu os tiranos"
 WIN_TEXT_EN = "You defeated the tyrants"
 
-GAME_OVER_TEXT_EN = "YOU DIED" # Mensagem de Game Over para derrota
+GAME_OVER_TEXT_EN = "YOU DIED"
 GAME_OVER_TEXT_PT = "VOCÊ MORREU"
