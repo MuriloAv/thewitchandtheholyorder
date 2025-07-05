@@ -23,7 +23,7 @@ PLAYER_START_X = 100
 PLAYER_START_Y = 420
 PLAYER_LIVES_START = 10
 PLAYER_INVINCIBILITY_DURATION = 1.5
-PLAYER_SHOOT_COOLDOWN = 1.5  # <-- ADICIONADO: Cadência de tiro do jogador (aumente para tiro mais lento)
+PLAYER_SHOOT_COOLDOWN = 2.0  # <-- ADICIONADO: Cadência de tiro do jogador (aumente para tiro mais lento)
 
 # --- Constantes do Pulo ---
 JUMP_STRENGTH = 600
