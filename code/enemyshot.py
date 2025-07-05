@@ -23,11 +23,11 @@ class EnemyShot(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=position)
 
         # Outras variáveis
-        self.speed = 300  # Exemplo, pode variar por enemy_type
+        self.speed = 100  # Exemplo, pode variar por enemy_type
         self.enemy_type = enemy_type
 
     def update(self, delta_time):
-        self.rect.x -= self.speed * delta_time * 60
+        self.rect.x -= self.speed * delta_time
         if self.rect.right < 0:
             self.kill()
 

@@ -34,16 +34,16 @@ ENEMY_WIDTH = 80 # Largura padrão para todos os inimigos (ajuste se quiser tama
 ENEMY_HEIGHT = 80 # Altura padrão para todos os inimigos
 
 # Inimigo 1 (6 frames: enemy1walk1 a enemy1walk6)
-ENEMY1_SPEED = 300 # Velocidade em pixels/segundo
+ENEMY1_SPEED = 200 # Velocidade em pixels/segundo
 ENEMY1_ANIMATION_SPEED = 0.1 # Tempo em segundos para cada frame
 
 
 # Inimigo 2 (4 frames: enemy2walk1 a enemy2walk4)
-ENEMY2_SPEED = 400
+ENEMY2_SPEED = 250
 ENEMY2_ANIMATION_SPEED = 0.12
 
 # Inimigo 3 (5 frames: enemy3walk1 a enemy3walk5)
-ENEMY3_SPEED = 350
+ENEMY3_SPEED = 300
 ENEMY3_ANIMATION_SPEED = 0.09
 
 # Constantes para o Spawn dos Inimigos

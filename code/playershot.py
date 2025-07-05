@@ -16,7 +16,7 @@ class PlayerShot(pygame.sprite.Sprite):
             self.image.fill((255, 255, 0))  # amarelo como fallback
 
         self.rect = self.image.get_rect(center=position)
-        self.speed = 800
+        self.speed = 300
         self.direction = direction
         self.damage = 25
         self.owner = "player"

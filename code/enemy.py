@@ -93,11 +93,13 @@ class Enemy1(Enemy):
     def __init__(self, position):
         super().__init__(position, const.ENEMY1_SPEED, const.ENEMY1_ANIMATION_SPEED, "enemy1walk", 6)
         self.health = const.ENEMY1_HEALTH
-        self.shoot_cooldown = 2.5
+        self.shoot_cooldown = 0.3
 
     def shoot(self):
-        shot_pos = self.rect.midleft
-        new_shot = EnemyShot(shot_pos, 'enemy1')
+        # shot_pos = self.rect.midleft # Antigo
+        shot_pos_x = self.rect.centerx - 20  # Exemplo: 20 pixels à esquerda do centro
+        shot_pos_y = self.rect.centery
+        new_shot = EnemyShot((shot_pos_x, shot_pos_y), 'enemy1')  # Ou 'enemy2', 'enemy3'
         self.shots_group.add(new_shot)
 
 
@@ -105,11 +107,13 @@ class Enemy2(Enemy):
     def __init__(self, position):
         super().__init__(position, const.ENEMY2_SPEED, const.ENEMY2_ANIMATION_SPEED, "enemy2walk", 4)
         self.health = const.ENEMY2_HEALTH
-        self.shoot_cooldown = 2.0
+        self.shoot_cooldown = 0.5
 
     def shoot(self):
-        shot_pos = self.rect.midleft
-        new_shot = EnemyShot(shot_pos, 'enemy2')
+        # shot_pos = self.rect.midleft # Antigo
+        shot_pos_x = self.rect.centerx - 20  # Exemplo: 20 pixels à esquerda do centro
+        shot_pos_y = self.rect.centery
+        new_shot = EnemyShot((shot_pos_x, shot_pos_y), 'enemy2')  # Ou 'enemy2', 'enemy3'
         self.shots_group.add(new_shot)
 
 
@@ -117,9 +121,11 @@ class Enemy3(Enemy):
     def __init__(self, position):
         super().__init__(position, const.ENEMY3_SPEED, const.ENEMY3_ANIMATION_SPEED, "enemy3walk", 5)
         self.health = const.ENEMY3_HEALTH
-        self.shoot_cooldown = 3.0
+        self.shoot_cooldown = 0.7
 
     def shoot(self):
-        shot_pos = self.rect.midleft
-        new_shot = EnemyShot(shot_pos, 'enemy3')
+        # shot_pos = self.rect.midleft # Antigo
+        shot_pos_x = self.rect.centerx - 20  # Exemplo: 20 pixels à esquerda do centro
+        shot_pos_y = self.rect.centery
+        new_shot = EnemyShot((shot_pos_x, shot_pos_y), 'enemy3')  # Ou 'enemy2', 'enemy3'
         self.shots_group.add(new_shot)
