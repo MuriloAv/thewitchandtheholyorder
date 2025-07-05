@@ -9,13 +9,13 @@ class Menu:
         self.screen = screen
         self.width, self.height = self.screen.get_size()
 
+        # --- MUDANÇA 1: Voltamos a carregar uma única fonte ---
+        # Como não usaremos mais símbolos, não precisamos de uma fonte separada.
         font_size = font_size or const.MENU_FONT_SIZE
         try:
             self.font = pygame.font.Font(font_path, font_size)
-            self.controls_font = pygame.font.Font(font_path, 32)
         except (pygame.error, FileNotFoundError):
-            self.font = pygame.font.Font(None, font_size)
-            self.controls_font = pygame.font.Font(None, 36)
+            self.font = pygame.font.Font(None, font_size)  # Fonte padrão se a customizada falhar
             print(f"Aviso: Fonte '{font_path}' não encontrada. Usando fonte padrão.")
 
         self.current_menu_state = "main"
@@ -27,7 +27,6 @@ class Menu:
             "controls": [const.BACK_TEXT_KEY]
         }
 
-        # --- CORREÇÃO AQUI: Readicionando as traduções que faltavam ---
         self.translations = {
             "en": {
                 "title": const.GAME_TITLE, "start_game": "Start Game", const.OPTIONS_TEXT_KEY: "Options",
@@ -35,8 +34,7 @@ class Menu:
                 const.LANGUAGE_TEXT_KEY: "Language", const.CONTROLS_TEXT_KEY: "Controls",
                 const.CONTROLS_MOVE_KEY: "Move:", const.CONTROLS_JUMP_KEY: "Jump:",
                 const.CONTROLS_ATTACK_KEY: "Attack:", const.BACK_TEXT_KEY: "Back",
-                "win_message": const.WIN_TEXT_EN,  # <-- LINHA READICIONADA
-                "game_over_message": const.GAME_OVER_TEXT_EN  # <-- LINHA READICIONADA
+                "win_message": const.WIN_TEXT_EN, "game_over_message": const.GAME_OVER_TEXT_EN
             },
             "pt": {
                 "title": "A Bruxa e a Santa Ordem", "start_game": "Iniciar Jogo", const.OPTIONS_TEXT_KEY: "Opções",
@@ -44,12 +42,10 @@ class Menu:
                 const.LANGUAGE_TEXT_KEY: "Idioma", const.CONTROLS_TEXT_KEY: "Controles",
                 const.CONTROLS_MOVE_KEY: "Mover:", const.CONTROLS_JUMP_KEY: "Pular:",
                 const.CONTROLS_ATTACK_KEY: "Atacar:", const.BACK_TEXT_KEY: "Voltar",
-                "win_message": const.WIN_TEXT_PT,  # <-- LINHA READICIONADA
-                "game_over_message": const.GAME_OVER_TEXT_PT  # <-- LINHA READICIONADA
+                "win_message": const.WIN_TEXT_PT, "game_over_message": const.GAME_OVER_TEXT_PT
             }
         }
         self.current_language = "pt"
-
         self.selected_index = 0
         self.option_rects = []
 
@@ -92,6 +88,7 @@ class Menu:
         return None
 
     def _draw_static_info(self):
+        """Desenha os textos informativos na tela de Controles."""
         if self.current_menu_state == 'controls':
             y_pos = self.height * 0.4
 
@@ -100,18 +97,20 @@ class Menu:
             self.screen.blit(controls_title_surf, controls_title_surf.get_rect(center=(self.width / 2, y_pos)))
             y_pos += 60
 
+            # --- MUDANÇA 2: TEXTO SIMPLIFICADO SEM SÍMBOLOS ---
             controls = {
-                const.CONTROLS_MOVE_KEY: "← → (Setas Esquerda e Direita)",
-                const.CONTROLS_JUMP_KEY: "↑ (Seta para Cima)",
-                const.CONTROLS_ATTACK_KEY: "ESPAÇO"
+                const.CONTROLS_MOVE_KEY: "Setas Esquerda e Direita",
+                const.CONTROLS_JUMP_KEY: "Seta para Cima",
+                const.CONTROLS_ATTACK_KEY: "Barra de Espaço"
             }
             for key, value in controls.items():
                 text = f"{self._get_translated_text(key)} {value}"
-                control_surf = self.controls_font.render(text, True, const.WHITE_COLOR)
+                control_surf = self.font.render(text, True, const.WHITE_COLOR)  # Usa a fonte principal
                 self.screen.blit(control_surf, control_surf.get_rect(center=(self.width / 2, y_pos)))
                 y_pos += 45
 
     def draw(self):
+        """Desenha a tela de menu atual."""
         self.screen.blit(self.menu_bg_image, (0, 0)) if self.menu_bg_image else self.screen.fill(const.BLACK_COLOR)
         title_surface = self.font.render(self._get_translated_text("title"), True, const.PURPLE_COLOR)
         self.screen.blit(title_surface,
@@ -142,11 +141,11 @@ class Menu:
         pygame.display.flip()
 
     def run(self):
+        """Executa o loop principal do menu."""
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return "quit"
-
                 if event.type == pygame.KEYDOWN:
                     current_options = self.menu_options[self.current_menu_state]
                     if event.key == pygame.K_UP:
@@ -160,7 +159,7 @@ class Menu:
                         if self.current_menu_state != "main":
                             if self.current_menu_state in ["language", "controls"]:
                                 self.current_menu_state = "options"
-                            else:  # options
+                            else:
                                 self.current_menu_state = "main"
                             self.selected_index = 0
                         else:
@@ -171,7 +170,7 @@ class Menu:
                         if rect.collidepoint(event.pos): self.selected_index = i; break
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if self.option_rects:
+                    if self.option_rects and self.selected_index < len(self.option_rects):
                         if self.option_rects[self.selected_index].collidepoint(event.pos):
                             action = self._handle_selection()
                             if action: return action
