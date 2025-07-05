@@ -13,14 +13,18 @@ class Player(pygame.sprite.Sprite):
         self.speed = const.PLAYER_SPEED
 
         # Controle de tiro
-        self.shoot_cooldown = 0.75
+        self.shoot_cooldown = 0.25  # Mantendo o cooldown ajustado
         self.time_since_last_shot = 0.0
         self.shots_group = pygame.sprite.Group()
 
-        # Adicionado: Controle de Vida e Invencibilidade
+        # Adicionado: Flag para controlar se o player pode atirar novamente após soltar a tecla.
+        # Esta flag será controlada EXCLUSIVAMENTE pelo Level.run() agora.
+        self.can_shoot = True
+
+        # Controle de Vida e Invencibilidade
         self.lives = const.PLAYER_LIVES_START
         self.invincible_timer = 0.0
-        self.invincible_duration = const.PLAYER_INVINCIBILITY_DURATION # Define a duração aqui
+        self.invincible_duration = const.PLAYER_INVINCIBILITY_DURATION
 
         # Estados de movimento e física
         self.on_ground = True
@@ -43,7 +47,7 @@ class Player(pygame.sprite.Sprite):
             self.image.fill(const.RED_COLOR)
             print("AVISO: Nenhuma imagem de player carregada. Usando fallback de cor sólida.")
 
-        self.original_image = self.image # Salva a imagem original para piscar quando invencível
+        self.original_image = self.image
         self.rect = self.image.get_rect(topleft=position)
 
         # Animações
@@ -90,6 +94,9 @@ class Player(pygame.sprite.Sprite):
             except pygame.error as e:
                 print(f"Erro ao carregar frame de pulo '{jump_file}': {e}")
 
+    # handle_event agora lida APENAS com eventos de pulo
+    # A detecção de K_SPACE (pressionar/soltar) e o controle de self.can_shoot
+    # foram movidos para Level.run().
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP and self.on_ground:
@@ -98,39 +105,51 @@ class Player(pygame.sprite.Sprite):
                 self.y_velocity = -const.JUMP_STRENGTH
                 self.current_jump_frame_index = 0
                 self.jump_animation_timer = 0.0
-            elif event.key == pygame.K_SPACE:
-                self.shoot()
+                print("DEBUG_PLAYER_EVENT: K_UP pressed!")  # DEBUG
+        # Evento KEYUP para K_SPACE também foi movido para Level.run()
 
+
+    # O método shoot() agora não tem mais a checagem self.can_shoot,
+    # que é feita ANTES de chamar shoot() em Level.run().
     def shoot(self):
+        print(
+            f"DEBUG_PLAYER_SHOOT: Attempting shot. Current time since last shot: {self.time_since_last_shot:.4f}, Required cooldown: {self.shoot_cooldown:.4f}")  # DEBUG
         if self.time_since_last_shot >= self.shoot_cooldown:
             shot_pos = self.rect.midright
             new_shot = PlayerShot(shot_pos, direction=1)
             self.shots_group.add(new_shot)
-            self.time_since_last_shot = 0.0
+            self.time_since_last_shot = 10
+            print(
+                f"DEBUG_PLAYER_SHOOT: Shot FIRED! Cooldown reset. Shots active in group: {len(self.shots_group)}")  # DEBUG
+        else:
+            print(
+                f"DEBUG_PLAYER_SHOOT: Shot NOT FIRED. Cooldown active. Remaining: {self.shoot_cooldown - self.time_since_last_shot:.4f}s")  # DEBUG
 
-    # NOVO MÉTODO: Player recebe dano
     def take_damage(self, amount):
-        if self.invincible_timer <= 0: # Só recebe dano se não estiver invencível
+        if self.invincible_timer <= 0:
             self.lives -= amount
-            self.invincible_timer = self.invincible_duration # Ativa o timer de invencibilidade
-            print(f"Player levou dano! Vidas restantes: {self.lives}")
+            self.invincible_timer = self.invincible_duration
+            print(
+                f"Player took damage! Lives remaining: {self.lives}. Invincibility activated for {self.invincible_duration}s")  # DEBUG
             if self.lives <= 0:
-                print("Player KO!")
-                # Aqui você chamaria a lógica de Game Over
+                print("Player is KO! Game Over state should be triggered.")  # DEBUG
 
     def update(self, delta_time):
         self.time_since_last_shot += delta_time
+        # DEBUG: Printar time_since_last_shot a cada 0.2 segundos para não lotar o terminal
+        if int(self.time_since_last_shot * 10) % 2 == 0 and int((self.time_since_last_shot - delta_time) * 10) % 2 != 0:
+            print(
+                f"DEBUG_PLAYER_UPDATE: dt: {delta_time:.4f}, time_since_last_shot: {self.time_since_last_shot:.4f}, Lives: {self.lives}, Invincible: {self.invincible_timer > 0}")
 
         # Atualiza timer de invencibilidade
         if self.invincible_timer > 0:
             self.invincible_timer -= delta_time
-            # Adiciona efeito de piscar enquanto invencível
-            if int(self.invincible_timer * 10) % 2 == 0: # Pisca a cada 0.1s
-                self.image = pygame.Surface((1,1), pygame.SRCALPHA) # Torna invisível
+            if int(self.invincible_timer * 10) % 2 == 0:
+                self.image = pygame.Surface((1, 1), pygame.SRCALPHA)
             else:
-                self.image = self.original_image # Volta a imagem original
+                self.image = self.original_image
         else:
-            self.image = self.original_image # Garante que a imagem esteja normal quando não invencível
+            self.image = self.original_image
 
         keys = pygame.key.get_pressed()
         dx = 0
@@ -138,6 +157,10 @@ class Player(pygame.sprite.Sprite):
             dx = -self.speed
         if keys[pygame.K_RIGHT]:
             dx = self.speed
+
+        # A verificação de K_SPACE para atirar foi movida para Level.run().
+        # O player.update() não deve mais chamar shoot() diretamente com base em `keys`.
+
 
         if self.on_ground:
             self.rect.x += dx
@@ -159,13 +182,7 @@ class Player(pygame.sprite.Sprite):
                 self.current_jump_frame_index = 0
                 self.jump_animation_timer = 0.0
 
-        # Atualiza animações (jump, walk, idle)
-        # IMPORTANTE: A lógica de animação foi movida para DENTRO
-        # do else do invencible_timer para não conflitar com o piscar
-        # e para garantir que a animação seja aplicada à self.original_image
-        # e depois copiada para self.image, se necessário.
-
-        current_animation_image = self.idle_image # Imagem base
+        current_animation_image = self.idle_image
         if self.is_jumping or not self.on_ground:
             if self.jump_frames:
                 self.jump_animation_timer += delta_time
@@ -181,18 +198,16 @@ class Player(pygame.sprite.Sprite):
                     self.current_walk_frame_index = (self.current_walk_frame_index + 1) % len(self.walk_frames)
                 current_animation_image = self.walk_frames[self.current_walk_frame_index]
         else:
-            # Já está self.idle_image
             self.current_walk_frame_index = 0
             self.walk_animation_timer = 0.0
             self.current_jump_frame_index = 0
             self.jump_animation_timer = 0.0
 
-        self.original_image = current_animation_image # Atualiza a imagem base (não invencível)
+        self.original_image = current_animation_image
 
         self.shots_group.update(delta_time)
 
     def draw(self, surface, camera_offset_x):
-        # O self.image já é atualizado no update para piscar
         screen_x = int(self.rect.x - camera_offset_x)
         surface.blit(self.image, (screen_x, self.rect.y))
 

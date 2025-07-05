@@ -41,7 +41,8 @@ class Level:
                 img = pygame.transform.scale(img, (sw, self.screen_height))
                 self.parallax_layers.append({
                     'image': img,
-                    'scroll_factor': scroll_factors[i - bg_start_index] if i - bg_start_index < len(scroll_factors) else 1.0
+                    'scroll_factor': scroll_factors[i - bg_start_index] if i - bg_start_index < len(
+                        scroll_factors) else 1.0
                 })
             except Exception as e:
                 print(f"[ERRO PARALLAX] {filename}: {e}")
@@ -80,7 +81,7 @@ class Level:
         spawn_y = const.PLAYER_START_Y
         new_enemy = enemy_class((spawn_x, spawn_y))
         self.enemies.add(new_enemy)
-        print(f"DEBUG: Spawned {new_enemy.name} at ({spawn_x}, {spawn_y})")
+        print(f"DEBUG_LEVEL: Spawned {new_enemy.name} at ({spawn_x}, {spawn_y})")  # DEBUG
 
     def _draw_elements(self):
         self.screen.fill(const.BLACK_COLOR)
@@ -116,55 +117,97 @@ class Level:
         pygame.display.flip()
 
     def run(self, clock):
+        # Garante que o primeiro delta_time é válido e não zero
+        clock.tick(const.FPS)
+
+        # Variável para controlar a taxa de prints de DEBUG_LEVEL_RUN
+        debug_print_timer = 0.0
+        debug_print_interval = 0.5  # Printa a cada 0.5 segundos
+
         while True:
-            delta_time = clock.tick(const.FPS) / 1000.0
+            dt_raw = clock.tick(const.FPS)
+            delta_time = dt_raw / 1000.0
 
+            # DEBUG: Printar a cada intervalo para não lotar o terminal
+            debug_print_timer += delta_time
+            if debug_print_timer >= debug_print_interval:
+                print(
+                    f"DEBUG_LEVEL_RUN: Frame start. Delta time: {delta_time:.4f}. Player X: {self.player.rect.x}. Camera X: {self.camera_offset_x}")
+                debug_print_timer = 0.0  # Resetar timer
+
+            # Processamento de Eventos:
+            # Coletamos os eventos e os passamos para o player para pulo e quit.
+            # A checagem de K_SPACE para atirar será feita AQUI no Level.run.
             for event in pygame.event.get():
-                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                if event.type == pygame.QUIT or \
+                        (event.type == pygame.K_ESCAPE and event.type == pygame.KEYDOWN):  # K_ESCAPE para sair
                     return "quit"
-                self.player.handle_event(event)
 
-            self.enemy_spawn_timer += delta_time
-            if self.enemy_spawn_timer >= self.next_spawn_time:
-                self._spawn_enemy()
-                self.enemy_spawn_timer = 0.0
-                self.next_spawn_time = random.uniform(const.ENEMY_SPAWN_INTERVAL_MIN, const.ENEMY_SPAWN_INTERVAL_MAX)
+                # ADICIONADO: Print para QUALQUER tecla pressionada (fora do player)
+                if event.type == pygame.KEYDOWN:
+                    print(f"DEBUG_LEVEL_EVENT: KEYDOWN detected in Level.run: Key: {event.key} (ASCII: {event.key})")
 
-            self.player.update(delta_time)
-            self.enemies.update(delta_time)
+                # ADICIONADO: Print para QUALQUER tecla solta (fora do player)
+                if event.type == pygame.KEYUP:
+                    print(f"DEBUG_LEVEL_EVENT: KEYUP detected in Level.run: Key: {event.key} (ASCII: {event.key})")
+                    if event.key == pygame.K_SPACE:  # NOVO: Reinicia a flag de tiro ao soltar K_SPACE aqui no Level.
+                        self.player.can_shoot = True  # Esta flag deve estar no player para ser acessada.
+                        print("DEBUG_LEVEL_EVENT: K_SPACE released, player can shoot again.")
 
-            for enemy in self.enemies:
-                for shot in list(enemy.shots_group):
-                    if shot.alive():
-                        self.enemy_shots.add(shot)
-            self.enemy_shots.update(delta_time)
+                self.player.handle_event(event)  # Passa o evento para o player (agora apenas para pulo)
 
-            for shot in list(self.enemy_shots):
-                if not shot.alive():
-                    self.enemy_shots.remove(shot)
+            # NOVO: Checagem direta de K_SPACE usando pygame.key.get_pressed() aqui no Level.run()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_SPACE]:
+                # Chamamos o shoot() do player aqui. A lógica de cooldown está dentro do player.
+                # A flag can_shoot também é usada aqui para evitar spam de tiro mantendo a tecla.
+                if self.player.can_shoot:  # Apenas se a flag permitir (evita spam ao segurar)
+                    self.player.shoot()
+                    self.player.can_shoot = False  # Impede novo tiro até a tecla ser solta (KEYUP)
 
-            EntityMediator.check_all_collisions(
-                self.player,
-                self.enemies,
-                self.player_shots,
-                self.enemy_shots
-            )
+            # Lógica de atualização só acontece se houver tempo decorrido válido
+            if delta_time > 0:
+                self.enemy_spawn_timer += delta_time
+                if self.enemy_spawn_timer >= self.next_spawn_time:
+                    self._spawn_enemy()
+                    self.enemy_spawn_timer = 0.0
+                    self.next_spawn_time = random.uniform(const.ENEMY_SPAWN_INTERVAL_MIN,
+                                                          const.ENEMY_SPAWN_INTERVAL_MAX)
 
-            # NOVO: Se o player morreu, retorna o estado de GAME OVER (derrota)
-            if self.player.lives <= 0:
-                print("GAME OVER - Player sem vidas!")
-                self.enemies.empty()
-                self.player_shots.empty()
-                self.enemy_shots.empty()
-                # CORREÇÃO: Certifique-se de retornar a constante, não a string "game_over_lose"
-                return const.GAME_STATE_GAME_OVER_LOSE
+                self.player.update(delta_time)  # O player ainda atualiza seus próprios tiros.
+                self.enemies.update(delta_time)
 
-            self._update_camera()
+                for enemy in self.enemies:
+                    for shot in list(enemy.shots_group):
+                        if shot.alive():
+                            self.enemy_shots.add(shot)
+                self.enemy_shots.update(delta_time)
+
+                for shot in list(self.enemy_shots):
+                    if not shot.alive():
+                        self.enemy_shots.remove(shot)
+
+                EntityMediator.check_all_collisions(
+                    self.player,
+                    self.enemies,
+                    self.player_shots,
+                    self.enemy_shots
+                )
+
+                if self.player.lives <= 0:
+                    print("DEBUG_LEVEL: Player died, returning GAME_OVER_LOSE.")  # DEBUG
+                    self.enemies.empty()
+                    self.player_shots.empty()
+                    self.enemy_shots.empty()
+                    return const.GAME_STATE_GAME_OVER_LOSE
+
+                self._update_camera()
+
+                if self.player.rect.x >= self.level_width - self.player.rect.width:
+                    print("DEBUG_LEVEL: Level complete, returning 'level_complete'.")  # DEBUG
+                    self.enemies.empty()
+                    self.player_shots.empty()
+                    self.enemy_shots.empty()
+                    return "level_complete"
+
             self._draw_elements()
-
-            if self.player.rect.x >= self.level_width - self.player.rect.width:
-                print("Nível completo!")
-                self.enemies.empty()
-                self.player_shots.empty()
-                self.enemy_shots.empty()
-                return "level_complete"

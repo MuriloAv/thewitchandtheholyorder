@@ -51,7 +51,6 @@ class Game:
             self.lose_background_image = pygame.image.load(lose_image_full_path).convert_alpha()
             self.lose_background_image = pygame.transform.scale(self.lose_background_image,
                                                                (const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
-            # print(f"DEBUG: Imagem de derrota '{const.GAME_OVER_LOSE_IMAGE}' carregada com sucesso.") # Removido
         except pygame.error as e:
             print(f"ERRO: Não foi possível carregar a imagem de derrota '{lose_image_full_path}': {e}")
             self.lose_background_image = None
@@ -89,8 +88,8 @@ class Game:
         self.level = Level(self.tela, bg_prefix, bg_count, bg_start_index, level_width)
         self.current_level_number = level_num
 
-    def handle_events(self):
-        pass
+    # REMOVIDO: def handle_events(self): pass
+    # Este método não é mais necessário, pois os eventos são tratados em cada estado específico.
 
 
     def _get_translated_win_text(self):
@@ -105,8 +104,10 @@ class Game:
     def run(self):
         rodando = True
         while rodando:
-            self.handle_events()
+            # REMOVIDO: self.handle_events()
+            # Os eventos agora são coletados *apenas* dentro de Level.run() ou nos loops de menu/game over.
 
+            # Lógica de transição de música baseada no estado do jogo
             if self.game_state != self.previous_game_state:
                 if self.game_state == const.GAME_STATE_MENU and self.current_playing_music != 'menu':
                     if pygame.mixer.music.get_busy():
@@ -143,6 +144,7 @@ class Game:
 
                 self.previous_game_state = self.game_state
 
+            # Lógica principal baseada no estado do jogo
             if self.game_state == const.GAME_STATE_MENU:
                 action_from_menu = self.menu.run()
                 if action_from_menu == "start_game":
@@ -166,14 +168,13 @@ class Game:
                             print("DEBUG: Todos os níveis completos! Fim do jogo.")
                             self.game_state = const.GAME_STATE_GAME_OVER_WIN
                     elif action_from_level == const.GAME_STATE_GAME_OVER_LOSE:
-                        # print("DEBUG: Transição para GAME_OVER_LOSE detectada.") # Removido
                         self.game_state = const.GAME_STATE_GAME_OVER_LOSE
                 else:
                     print("Erro: Nível não inicializado no estado PLAYING. Voltando ao menu.")
                     self.game_state = const.GAME_STATE_MENU
 
             elif self.game_state == const.GAME_STATE_GAME_OVER_WIN:
-                for event in pygame.event.get():
+                for event in pygame.event.get(): # Eventos coletados aqui, localmente para esta tela
                     if event.type == pygame.QUIT:
                         self.game_state = const.GAME_STATE_QUIT
                     if event.type == pygame.KEYDOWN:
@@ -191,11 +192,10 @@ class Game:
                 self.tela.blit(win_surface, win_rect)
 
                 pygame.display.flip()
+                self.relogio.tick(const.FPS) # Mantenha o relógio ativo para esta tela
 
-            # Lógica para a tela de Game Over (Derrota)
             elif self.game_state == const.GAME_STATE_GAME_OVER_LOSE:
-                # print("DEBUG: Exibindo tela de GAME_OVER_LOSE.") # Removido
-                for event in pygame.event.get():
+                for event in pygame.event.get(): # Eventos coletados aqui, localmente para esta tela
                     if event.type == pygame.QUIT:
                         self.game_state = const.GAME_STATE_QUIT
                     if event.type == pygame.KEYDOWN:
@@ -205,7 +205,7 @@ class Game:
                 if self.lose_background_image:
                     self.tela.blit(self.lose_background_image, (0, 0))
                 else:
-                    self.tela.fill(const.BLACK_COLOR) # Fallback se a imagem não carregar
+                    self.tela.fill(const.BLACK_COLOR)
                     print("AVISO: Imagem de derrota não carregada. Usando tela preta.")
 
                 game_over_text = self._get_translated_game_over_text()
@@ -214,7 +214,7 @@ class Game:
                 self.tela.blit(game_over_surface, game_over_rect)
 
                 pygame.display.flip()
-                self.relogio.tick(const.FPS) # Mantenha o relógio ativo para evitar loop infinito sem atualização
+                self.relogio.tick(const.FPS) # Mantenha o relógio ativo para esta tela
 
             elif self.game_state == const.GAME_STATE_QUIT:
                 rodando = False
