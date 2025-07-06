@@ -9,17 +9,15 @@ class Menu:
         self.screen = screen
         self.width, self.height = self.screen.get_size()
 
-        # --- MUDANÇA 1: Voltamos a carregar uma única fonte ---
-        # Como não usaremos mais símbolos, não precisamos de uma fonte separada.
         font_size = font_size or const.MENU_FONT_SIZE
         try:
             self.font = pygame.font.Font(font_path, font_size)
+            self.info_font = pygame.font.Font(None, 32)
         except (pygame.error, FileNotFoundError):
-            self.font = pygame.font.Font(None, font_size)  # Fonte padrão se a customizada falhar
-            print(f"Aviso: Fonte '{font_path}' não encontrada. Usando fonte padrão.")
+            self.font = pygame.font.Font(None, font_size)
+            self.info_font = pygame.font.Font(None, 32)
 
         self.current_menu_state = "main"
-
         self.menu_options = {
             "main": ["start_game", const.OPTIONS_TEXT_KEY, "quit_game"],
             "options": [const.LANGUAGE_TEXT_KEY, const.CONTROLS_TEXT_KEY, const.BACK_TEXT_KEY],
@@ -27,6 +25,7 @@ class Menu:
             "controls": [const.BACK_TEXT_KEY]
         }
 
+        # --- MUDANÇA 1: Adiciona as traduções para as descrições dos controles ---
         self.translations = {
             "en": {
                 "title": const.GAME_TITLE, "start_game": "Start Game", const.OPTIONS_TEXT_KEY: "Options",
@@ -34,6 +33,9 @@ class Menu:
                 const.LANGUAGE_TEXT_KEY: "Language", const.CONTROLS_TEXT_KEY: "Controls",
                 const.CONTROLS_MOVE_KEY: "Move:", const.CONTROLS_JUMP_KEY: "Jump:",
                 const.CONTROLS_ATTACK_KEY: "Attack:", const.BACK_TEXT_KEY: "Back",
+                const.CONTROLS_MOVE_VALUE_KEY: "Left and Right Arrows",
+                const.CONTROLS_JUMP_VALUE_KEY: "Up Arrow",
+                const.CONTROLS_ATTACK_VALUE_KEY: "Spacebar",
                 "win_message": const.WIN_TEXT_EN, "game_over_message": const.GAME_OVER_TEXT_EN
             },
             "pt": {
@@ -42,6 +44,9 @@ class Menu:
                 const.LANGUAGE_TEXT_KEY: "Idioma", const.CONTROLS_TEXT_KEY: "Controles",
                 const.CONTROLS_MOVE_KEY: "Mover:", const.CONTROLS_JUMP_KEY: "Pular:",
                 const.CONTROLS_ATTACK_KEY: "Atacar:", const.BACK_TEXT_KEY: "Voltar",
+                const.CONTROLS_MOVE_VALUE_KEY: "Setas Esquerda e Direita",
+                const.CONTROLS_JUMP_VALUE_KEY: "Seta para Cima",
+                const.CONTROLS_ATTACK_VALUE_KEY: "Barra de Espaço",
                 "win_message": const.WIN_TEXT_PT, "game_over_message": const.GAME_OVER_TEXT_PT
             }
         }
@@ -54,7 +59,7 @@ class Menu:
             bg_path = os.path.join(base_dir, '..', 'asset', 'menubg.png')
             self.menu_bg_image = pygame.transform.scale(pygame.image.load(bg_path).convert(), (self.width, self.height))
         except pygame.error as e:
-            self.menu_bg_image = None;
+            self.menu_bg_image = None
             print(f"Erro ao carregar a imagem de fundo do menu: {e}")
 
     def _get_translated_text(self, key):
@@ -88,7 +93,6 @@ class Menu:
         return None
 
     def _draw_static_info(self):
-        """Desenha os textos informativos na tela de Controles."""
         if self.current_menu_state == 'controls':
             y_pos = self.height * 0.4
 
@@ -97,20 +101,23 @@ class Menu:
             self.screen.blit(controls_title_surf, controls_title_surf.get_rect(center=(self.width / 2, y_pos)))
             y_pos += 60
 
-            # --- MUDANÇA 2: TEXTO SIMPLIFICADO SEM SÍMBOLOS ---
+            # --- MUDANÇA 2: O dicionário agora usa chaves para os valores também ---
             controls = {
-                const.CONTROLS_MOVE_KEY: "Setas Esquerda e Direita",
-                const.CONTROLS_JUMP_KEY: "Seta para Cima",
-                const.CONTROLS_ATTACK_KEY: "Barra de Espaço"
+                const.CONTROLS_MOVE_KEY: const.CONTROLS_MOVE_VALUE_KEY,
+                const.CONTROLS_JUMP_KEY: const.CONTROLS_JUMP_VALUE_KEY,
+                const.CONTROLS_ATTACK_KEY: const.CONTROLS_ATTACK_VALUE_KEY
             }
-            for key, value in controls.items():
-                text = f"{self._get_translated_text(key)} {value}"
-                control_surf = self.font.render(text, True, const.WHITE_COLOR)  # Usa a fonte principal
+            for label_key, value_key in controls.items():
+                # --- MUDANÇA 3: Traduz tanto o rótulo quanto a descrição ---
+                label = self._get_translated_text(label_key)
+                value = self._get_translated_text(value_key)
+                text = f"{label} {value}"
+
+                control_surf = self.info_font.render(text, True, const.WHITE_COLOR)
                 self.screen.blit(control_surf, control_surf.get_rect(center=(self.width / 2, y_pos)))
                 y_pos += 45
 
     def draw(self):
-        """Desenha a tela de menu atual."""
         self.screen.blit(self.menu_bg_image, (0, 0)) if self.menu_bg_image else self.screen.fill(const.BLACK_COLOR)
         title_surface = self.font.render(self._get_translated_text("title"), True, const.PURPLE_COLOR)
         self.screen.blit(title_surface,
@@ -141,7 +148,6 @@ class Menu:
         pygame.display.flip()
 
     def run(self):
-        """Executa o loop principal do menu."""
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

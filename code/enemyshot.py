@@ -1,4 +1,3 @@
-# code/enemyshot.py
 import os
 import pygame
 
@@ -17,7 +16,7 @@ class EnemyShot(pygame.sprite.Sprite):
         self.speed = 400
         self.direction = direction
         self.enemy_type = enemy_type
-        self.damage = 1 # Dano do tiro inimigo
+        self.damage = 1
 
     def update(self, delta_time, camera_offset_x, screen_width):
         """
@@ -25,7 +24,6 @@ class EnemyShot(pygame.sprite.Sprite):
         """
         self.rect.x += self.speed * self.direction * delta_time
 
-        # --- A MESMA CORREÇÃO APLICADA AQUI ---
         if self.rect.right < camera_offset_x or self.rect.left > camera_offset_x + screen_width:
             self.kill()
 

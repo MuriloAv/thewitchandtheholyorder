@@ -1,4 +1,3 @@
-# code/playershot.py
 import pygame
 import os
 from . import const
@@ -16,7 +15,7 @@ class PlayerShot(pygame.sprite.Sprite):
             self.image.fill((255, 255, 0))
 
         self.rect = self.image.get_rect(center=position)
-        self.speed = 500  # Aumentei a velocidade para o tiro ser mais eficaz
+        self.speed = 500
         self.direction = direction
         self.damage = 25
         self.owner = "player"
@@ -34,8 +33,8 @@ class PlayerShot(pygame.sprite.Sprite):
                 temp_image = pygame.image.load(frame_file).convert_alpha()
                 scaled_image = pygame.transform.scale(temp_image, (30, 15))
                 self.animation_frames.append(scaled_image)
-            except pygame.error as e:
-                print(f"Erro ao carregar frame '{frame_file}' do PlayerShot: {e}")
+            except pygame.error:
+                continue
 
     def update(self, delta_time, camera_offset_x, screen_width):
         """
@@ -50,8 +49,6 @@ class PlayerShot(pygame.sprite.Sprite):
                 self.current_frame_index = (self.current_frame_index + 1) % len(self.animation_frames)
                 self.image = self.animation_frames[self.current_frame_index]
 
-        # --- ESTA É A CORREÇÃO PRINCIPAL ---
-        # Verifica se o tiro saiu da visão da câmera, não da tela fixa.
         if self.rect.right < camera_offset_x or self.rect.left > camera_offset_x + screen_width:
             self.kill()
 

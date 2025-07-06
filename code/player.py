@@ -1,14 +1,10 @@
-# code/player.py
 import pygame
 import os
 from . import const
 from .playershot import PlayerShot
 
-
 class Player(pygame.sprite.Sprite):
     """Representa o personagem do jogador, controlando seu estado, movimento e ações."""
-
-    # O __init__ agora aceita um argumento opcional para a vida
     def __init__(self, position, starting_lives=None):
         super().__init__()
         self.name = "Player"
@@ -17,9 +13,6 @@ class Player(pygame.sprite.Sprite):
         self.shoot_cooldown = const.PLAYER_SHOOT_COOLDOWN
         self.time_since_last_shot = self.shoot_cooldown
 
-        # --- MUDANÇA PRINCIPAL AQUI ---
-        # Se uma contagem de vidas for fornecida, use-a.
-        # Senão, use o valor padrão (para o início do jogo).
         if starting_lives is not None:
             self.lives = starting_lives
         else:
@@ -28,13 +21,11 @@ class Player(pygame.sprite.Sprite):
         self.invincible_timer = 0.0
         self.invincible_duration = const.PLAYER_INVINCIBILITY_DURATION
 
-        # O resto do arquivo continua igual...
         self.on_ground = True
         self.is_jumping = False
         self.y_velocity = 0
         self._load_animation_frames()
-        self.image = self.idle_image if self.idle_image else pygame.Surface((const.PLAYER_WIDTH, const.PLAYER_HEIGHT),
-                                                                            pygame.SRCALPHA)
+        self.image = self.idle_image if self.idle_image else pygame.Surface((const.PLAYER_WIDTH, const.PLAYER_HEIGHT), pygame.SRCALPHA)
         if not self.idle_image: self.image.fill(const.RED_COLOR)
         self.original_image = self.image
         self.rect = self.image.get_rect(topleft=position)
@@ -48,23 +39,22 @@ class Player(pygame.sprite.Sprite):
         try:
             img = pygame.image.load(os.path.join(asset_path, 'playerwalk0.png')).convert_alpha()
             self.idle_image = pygame.transform.scale(img, (const.PLAYER_WIDTH, const.PLAYER_HEIGHT))
-        except pygame.error as e:
+        except pygame.error:
             self.idle_image = None;
-            print(f"Erro ao carregar imagem IDLE do jogador: {e}")
         self.walk_frames = []
         for i in range(1, 8):
             try:
                 img = pygame.image.load(os.path.join(asset_path, f'playerwalk{i}.png')).convert_alpha()
                 self.walk_frames.append(pygame.transform.scale(img, (const.PLAYER_WIDTH, const.PLAYER_HEIGHT)))
-            except pygame.error as e:
-                print(f"Erro ao carregar frame de caminhada 'playerwalk{i}.png': {e}")
+            except pygame.error:
+                continue
         self.jump_frames = []
         for i in range(1, 7):
             try:
                 img = pygame.image.load(os.path.join(asset_path, f'pulo{i}.png')).convert_alpha()
                 self.jump_frames.append(pygame.transform.scale(img, (const.PLAYER_WIDTH, const.PLAYER_HEIGHT)))
-            except pygame.error as e:
-                print(f"Erro ao carregar frame de pulo 'pulo{i}.png': {e}")
+            except pygame.error:
+                continue
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_UP and self.on_ground:

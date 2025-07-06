@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 
+
 SCORE_FILENAME = "high_scores.json"
 
 def load_data():
@@ -20,5 +21,5 @@ def save_data(data):
     try:
         with open(SCORE_FILENAME, 'w') as f:
             json.dump(data, f, indent=4)
-    except IOError as e:
-        print(f"ERRO: Não foi possível salvar os dados em '{SCORE_FILENAME}': {e}")
+    except IOError:
+        pass
